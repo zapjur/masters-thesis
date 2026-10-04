@@ -1,0 +1,57 @@
+# macOS
+.DS_Store
+
+# Editors
+.idea/
+.vscode/
+*.swp
+*.swo
+
+# Temporary files
+*.tmp
+*.temp
+*.log
+
+# Environment
+.env
+.env.*
+!.env.example
+
+# Secrets
+secrets/
+*.pem
+*.key
+
+# Python
+__pycache__/
+*.py[cod]
+.venv/
+venv/
+
+# Node
+node_modules/
+
+# Rust
+target/
+
+# Go
+bin/
+
+# Build outputs
+build/
+dist/
+out/
+
+# Benchmark temporary output
+tmp/
+.cache/
+
+# Large generated artifacts
+*.pcap
+*.pcapng
+
+# Local experiment scratch data
+experiments/local/
+
+# Analysis notebooks
+.ipynb_checkpoints/
