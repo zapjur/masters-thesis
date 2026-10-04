@@ -12,8 +12,8 @@ The comparison is performed using selected network functions.
 
 The initial functions are:
 
-- firewall,
-- load balancer.
+- stateless Layer 4 virtual firewall (`vFW`),
+- simple round-robin Layer 4 virtual load balancer (`vLB`).
 
 ## Primary metrics
 
@@ -58,7 +58,7 @@ Potential candidates include:
 
 - Rust,
 - C/C++,
-- Go or TinyGo.
+- TinyGo.
 
 This is a secondary experiment.
 
@@ -66,7 +66,7 @@ It must not delay the primary WebAssembly vs container vs virtual-machine compar
 
 ### Multiple WebAssembly runtimes
 
-Comparing multiple runtimes may be useful if runtime selection proves to have a significant
+Wasmtime is the baseline. A Wasmtime vs WasmEdge comparison may be useful if runtime selection proves to have a significant
 effect on network-function performance.
 
 This should initially be treated as optional.
@@ -116,3 +116,29 @@ function should answer:
 4. Can the thesis answer its primary research question without it?
 
 If the answer to question 4 is yes, the feature should generally remain optional.
+
+## Accepted execution and automation scope
+
+The primary VNF language is Rust, sharing logic across Wasmtime WebAssembly and native
+x86_64 Docker Engine / QEMU/KVM/libvirt variants where feasible. All run on the same
+bare-metal x86 Linux DUT; Ubuntu Server 24.04 LTS is the preferred OS. Three physical
+machines separate DUT, generation/orchestration, and backend roles.
+
+Clojure `mt` with EDN scenarios automates execution; Ansible configures hosts. Controlled
+Clojure backends are permitted outside the DUT. The primary vLB backend uses `minimal`
+mode. Deterministic `delayed` and `cpu-light` modes are optional secondary scenarios.
+AWS/EC2 may support development, CI, functional/reproducibility tests, or auxiliary
+experiments, but not the primary final measurements without a new justified decision.
+
+Layer 4 / socket-based networking is initially preferred. HTTP parsing/frameworks,
+raw Ethernet processing, DPDK, AF_XDP, and eBPF are not baseline requirements.
+The baseline excludes DPI, IDS/IPS, connection tracking, NAT, and complex firewall policy
+engines, as well as TLS termination, weighted routing, sticky sessions, complex health
+checks, and application-aware load balancing.
+
+## Provisional design values
+
+The second NIC, TRex, size/load sets, approximately 30 repetitions, precise resource
+allocation, and statistical tests remain proposed. Consult [decisions.md](decisions.md).
+Optional source-language or runtime experiments must not delay the primary comparison.
+This planning stage creates documentation only, not subsystem boilerplate.

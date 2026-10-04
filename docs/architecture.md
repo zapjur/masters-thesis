@@ -2,189 +2,115 @@
 
 ## Status
 
-**Draft — major decisions still open**
+**Baseline accepted — networking details and measurement configuration remain open.**
 
-This document will describe the final experimental architecture.
+Accepted choices and proposals are recorded in [decisions.md](decisions.md). This document
+specifies the physical/logical system; [methodology.md](methodology.md) specifies scientific
+controls and [experimental-framework.md](experimental-framework.md) specifies automation.
 
-No architecture should be considered final until it is explicitly recorded in
-`docs/decisions.md`.
+## Objective and physical roles
 
-## Architectural objective
+Compare both network performance and environment/resource overhead on a common DUT.
 
-The environment must allow a fair and reproducible comparison of:
+| Physical machine | Stable experimental role | Responsibilities |
+| --- | --- | --- |
+| MacBook M4 Max | Generator and orchestrator | Traffic generation, central `mt` control, final artifact collection |
+| x86 desktop: i7-6700K, 16 GB RAM, SSD | Bare-metal DUT | Wasmtime, Docker Engine, QEMU/KVM/libvirt, VNF execution, resource measurements |
+| MacBook M1 Pro | Backend and receiver | Controlled backend services and traffic destinations |
 
-- WebAssembly,
-- containers,
-- virtual machines.
-
-The environment must support at least:
-
-- firewall experiments,
-- load-balancer experiments,
-- controlled traffic generation,
-- latency measurement,
-- throughput measurement,
-- CPU measurement,
-- memory measurement,
-- startup-time measurement.
-
-## High-level logical topology
-
-A generic benchmark topology may consist of:
+The DUT runs Linux; Ubuntu Server 24.04 LTS is the accepted preferred OS, not a claim
+that installation/configuration is complete. Native VNF builds target x86_64.
+All three execution technologies use this same DUT. The Apple Silicon machines are
+supporting hosts, not DUT variants; their capacity must be verified to avoid bottlenecks.
 
 ```text
-Traffic generator
-        |
-        v
-Network function under test
-        |
-        v
-Destination / backend
+MacBook M4 Max: traffic generator + mt orchestrator
+                         |
+                         v
+            x86 desktop: common Linux DUT
+             +-----------+-----------+
+             |           |           |
+          Wasmtime     Docker     QEMU/KVM/libvirt
+          Rust Wasm  Rust native  Rust native in Linux guest
+             |           |           |
+             +-----------+-----------+
+                         |
+                         v
+        MacBook M1 Pro: backend / receiver
 ```
 
-For the load balancer:
+Each selected environment runs vFW or vLB. The diagram shows alternative execution
+paths, not a requirement to run all variants concurrently. Experiment ordering and
+reset/isolation controls are defined in methodology.
+
+## Execution model
 
 ```text
-Traffic generator
-        |
-        v
-   Load balancer
-      /      \
-     v        v
-Backend A   Backend B
+                    Shared Rust source
+                           |
+                  +--------+--------+
+                  |                 |
+             WebAssembly       native x86_64
+                  |                 |
+               Wasmtime       +-----+-----+
+                              |           |
+                        Docker Engine  Linux guest
+                                       QEMU/KVM/libvirt
+                                       virtio networking
 ```
 
-The exact topology is not decided yet.
+Docker runs the native build. The VM runs the same executable or an equivalent build
+from the same source tree. Shared logic is intended where technically feasible; exact
+WASI/socket interfaces, target, dependencies, and networking adapters require validation.
+Neither source identity nor functional/network-path equivalence is assumed to be proven.
 
-## Required roles
+## Network path and hardware proposal
 
-The experimental environment will likely require the following logical roles:
+```text
+Generator -> ingress -> DUT -> egress -> Backend
+```
 
-### Traffic generator
+Physical separation of generator and backend traffic is preferred where practical.
+A second DUT NIC is a proposed hardware improvement: one ingress NIC and one egress NIC.
+It is not known to exist and is not yet a hard requirement. Evaluate available NICs,
+link speeds, cabling/switch layout, compatibility, and routing before selecting the setup.
 
-Produces controlled traffic.
+Container networking, guest virtio networking, and Wasmtime socket access may introduce
+different host paths. Record and control these differences rather than attributing all
+observed overhead solely to execution technology. L4/socket-based processing is the
+initial preferred abstraction; it does not automatically imply raw packet forwarding.
+TCP/UDP semantics, firewall rejection/drop behavior, and load-balancer transport handling
+remain unresolved.
 
-### Device / function under test
+## Backends
 
-Runs one of the tested implementations:
+A single configurable Clojure backend service is planned on the M1 Pro:
 
-- WebAssembly,
-- container,
-- virtual machine.
+| Mode | Behavior | Scope |
+| --- | --- | --- |
+| `minimal` | Minimal response/acknowledgment processing | Primary vLB benchmark |
+| `delayed` | Deterministic configured delay, e.g. 5/20/100 ms | Optional secondary scenario; values illustrative |
+| `cpu-light` | Small deterministic computation/serialization | Optional secondary scenario |
 
-### Backend or receiver
+Multiple logical backend destinations may run on the same backend machine. Backend count,
+protocol, framing, capacity, and port/address layout remain open. The firewall may use an
+even simpler TCP/UDP receiver to verify correct forwarding. Backend performance is not
+an independent variable, but must not silently limit measured VNF performance.
 
-Receives forwarded traffic and may generate application responses.
+## Cloud boundary
 
-### Measurement and control component
+AWS/EC2 is not the primary environment for final measurements. Underlying virtualization,
+noisy neighbours, and weaker CPU/network controls may obscure environment and VM overhead.
+Development, CI, functional tests, reproducibility trials, and auxiliary cloud experiments
+are permitted. Changing the primary bare-metal baseline requires evidence and a new decision.
 
-Starts experiments, records environment metadata, collects system metrics, and stores results.
+## Remaining architecture questions
 
-These roles do not necessarily require separate physical machines.
+- Verify NIC inventory, link capacity, topology, and traffic-generator compatibility.
+- Select exact Linux guest, runtime/toolchain versions, WASI target and socket integration.
+- Define equivalent network paths, TCP/UDP behavior, backend destinations, and management access.
+- Define CPU affinity/vCPU pinning, memory limits, and host/guest resource accounting.
+- Verify generator/backend headroom and isolate orchestration/collection overhead.
+- Specify background activity controls, power/performance settings, and clock handling.
 
-## Open decision: physical deployment
-
-Possible approaches include:
-
-### Option A — single physical host
-
-Advantages:
-
-- easy to reproduce,
-- easy to control,
-- no cloud cost,
-- low environmental variability.
-
-Risks:
-
-- resource contention,
-- shared kernel or network stack effects,
-- traffic generator competing with the tested workload,
-- weaker separation between components.
-
-### Option B — multiple physical machines
-
-Advantages:
-
-- stronger workload isolation,
-- more realistic network path,
-- easier separation of traffic generation and tested workload.
-
-Risks:
-
-- additional hardware requirements,
-- differences between machines,
-- synchronization and configuration complexity.
-
-### Option C — public cloud
-
-For example, virtual machines connected using an isolated virtual network.
-
-Advantages:
-
-- easy creation of multiple hosts,
-- infrastructure repeatability,
-- flexible instance sizes.
-
-Risks:
-
-- shared cloud infrastructure noise,
-- virtualization already present underneath experiments,
-- variable performance,
-- cost,
-- possible difficulty when evaluating VM overhead fairly.
-
-## Available hardware
-
-Known available machines include:
-
-- Apple Silicon laptop with M1 Pro,
-- Apple Silicon laptop with M4 Max,
-- older x86 desktop:
-  - Intel Core i7-6700K,
-  - 16 GB RAM,
-  - SSD.
-
-These machines are not equivalent.
-
-A mixed-hardware experiment should therefore be avoided unless the role of each machine
-is carefully controlled.
-
-The final benchmark host has not yet been selected.
-
-## Architecture requirements
-
-The final design should prioritize:
-
-1. fairness,
-2. repeatability,
-3. measurement isolation,
-4. low environmental variance,
-5. automation,
-6. practical feasibility.
-
-## Architecture questions to resolve
-
-Before implementation starts, decide:
-
-- What machine runs the tested network function?
-- What machine generates traffic?
-- Is physical host separation necessary?
-- Is the main experiment x86-64 or ARM64?
-- Which operating system will be used?
-- Which hypervisor will be used?
-- Which container runtime will be used?
-- Which WebAssembly runtime will be used?
-- How will networking be configured?
-- How will CPU and memory isolation be achieved?
-- Will CPU affinity or CPU pinning be used?
-- How will background system activity be minimized?
-- How will clocks be handled for latency measurements?
-- Will the benchmark measure packet forwarding or application-level request processing?
-- Will the function operate at Layer 3/4 or application level?
-
-## Principle
-
-Choose the simplest architecture that provides scientifically credible measurements.
-
-Do not introduce distributed systems complexity unless it improves experimental validity.
+Exact CPU IDs, resource limits, traffic tools, and collectors are not selected here.

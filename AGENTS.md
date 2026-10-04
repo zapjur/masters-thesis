@@ -19,8 +19,8 @@ in the implementation of selected network functions.
 
 The initial network functions are:
 
-- firewall
-- load balancer
+- stateless Layer 4 virtual firewall (`vFW`)
+- simple round-robin Layer 4 virtual load balancer (`vLB`)
 
 The primary metrics are:
 
@@ -36,6 +36,9 @@ The primary metrics are:
 Before making significant architectural, experimental, or implementation changes,
 read the relevant documentation.
 
+Before implementing a major subsystem, check `docs/decisions.md` and the relevant
+design documents. Proposed decisions must not be silently promoted to accepted decisions.
+
 Important files:
 
 - `docs/thesis.md` — thesis overview and motivation
@@ -43,6 +46,7 @@ Important files:
 - `docs/research.md` — research questions and hypotheses
 - `docs/architecture.md` — experimental environment architecture
 - `docs/methodology.md` — benchmarking and experimental methodology
+- `docs/experimental-framework.md` — automation and orchestration design
 - `docs/decisions.md` — important project and research decisions
 - `docs/literature.md` — literature notes and source tracking
 - `docs/glossary.md` — terminology used in the project
@@ -91,7 +95,11 @@ to reproduce a run, including where applicable:
 - warm-up duration,
 - number of repetitions.
 
-Prefer automated experiment execution over manual procedures.
+Experiment execution must be fully automated by `mt`. Record cooldown, repetition,
+traffic profile, resource allocation, and experiment order as well. Use active readiness
+probes and identical traffic definitions across execution environments. Record the Git
+commit for every campaign/run; a clean-working-tree requirement for final measurements
+is proposed. Raw data must remain immutable.
 
 ### Scope discipline
 
@@ -109,7 +117,8 @@ Before introducing major technologies or research dimensions such as:
 - public cloud deployments,
 - multi-node clusters,
 
-check `docs/scope.md`.
+check `docs/scope.md` and `docs/decisions.md`. The accepted Rust VNF and Clojure
+orchestrator/backend roles are intentional; additional VNF languages remain optional.
 
 If something is outside the current scope, propose it first instead of implementing it immediately.
 
@@ -168,16 +177,47 @@ Prefer the terms:
 
 Avoid calling WebAssembly itself a virtual machine unless discussing a specific runtime architecture.
 
+## Accepted implementation and architecture baseline
+
+- Rust is the VNF reference language; share function logic between WebAssembly and native
+  x86_64 builds where technically feasible. Rust is selected for fairness, portability,
+  low runtime overhead, and mature tooling, not universal language performance superiority.
+- Wasmtime is the baseline WebAssembly runtime.
+- Docker Engine on Linux runs the native Rust VNF.
+- QEMU/KVM/libvirt with a Linux guest and virtio networking runs the same native executable
+  or an equivalent build from the same source tree.
+- All three technologies are benchmarked on the same bare-metal x86 DUT: Intel Core
+  i7-6700K, 16 GB RAM, SSD. Ubuntu Server 24.04 LTS is the accepted preferred DUT OS;
+  installation and exact versions still need verification.
+- MacBook M4 Max generates traffic, runs the orchestrator, and collects final artifacts.
+  MacBook M1 Pro runs backends/receivers. Neither Mac is a primary DUT.
+- Layer 4 / socket-based networking is the initial preferred abstraction.
+- Clojure is used for `mt` (master-thesis); EDN defines experiment scenarios.
+- Ansible configures/provisions hosts. `mt deploy` deploys applications/artifacts;
+  `mt run` manages experiment lifecycles. Ansible is not the per-benchmark engine.
+- Backend services may be written in Clojure on the M1 Pro. The primary vLB scenario
+  uses a configurable service in `minimal` mode, outside the DUT.
+- Final measurements use the controlled bare-metal DUT. AWS/EC2 is auxiliary only
+  unless evidence and an explicit decision justify changing this baseline.
+
+Experimental fairness and reproducibility take priority over implementation convenience.
+Document unavoidable networking, build, and measurement differences. Account for total
+VM/environment overhead where appropriate, rather than only guest VNF process RSS.
+
+## Proposals and open methodology
+
+A second DUT NIC, TRex, exact packet/payload sizes and load levels, approximately 30
+repetitions, exact CPU/memory allocations, statistical tests, and a clean-working-tree
+check remain proposals. A second NIC is not known to exist. Wasmtime vs WasmEdge and
+Rust vs C/C++ vs TinyGo are optional secondary experiments, not core requirements.
+Do not infer acceptance from illustrative configuration examples.
+
 ## Current project state
 
-The repository is currently in the planning stage.
+Documentation and planning only. No VNF, backend, `mt`, Ansible, or infrastructure
+implementation has been authorized by this planning update.
 
-Do not start implementing the network functions unless explicitly requested.
-
-The immediate priority is:
-
-1. define the research design,
-2. select the experimental architecture,
-3. define benchmark methodology,
-4. select concrete technologies,
-5. only then implement the test environment.
+Before implementation is requested, resolve networking feasibility, remaining architecture
+and methodology questions, and version/resource controls in the relevant documents.
+Do not install dependencies, configure hosts, build images, create VMs, or run benchmarks
+as part of a documentation-only task.

@@ -50,22 +50,34 @@ How does each execution technology behave as the offered workload increases?
 Are the observed differences consistent across different network-function types, or do they
 depend on the workload characteristics?
 
-## Working hypothesis
+## Working hypotheses
 
-The current working hypothesis is:
+The supervisor suggests that WebAssembly may provide high network-function performance
+with lower server resource consumption. The following claims are falsifiable hypotheses,
+not results.
 
-> WebAssembly can provide lower execution-environment overhead and shorter startup time
-> than traditional containers and virtual machines while maintaining competitive performance
-> for selected network functions.
+### H1 — Network performance
 
-This hypothesis must be refined once:
+WebAssembly enables the selected network functions to achieve network performance that
+is at least competitive with equivalent container and virtual-machine implementations.
+The methodology must define a competitiveness threshold and workload-specific latency
+and sustainable-throughput criteria before final measurements.
 
-- the execution architecture,
-- implementation model,
-- traffic model,
-- and measurement methodology
+### H2 — Resource efficiency
 
-have been selected.
+WebAssembly requires lower execution-environment resource overhead for the selected
+network functions than containers and virtual machines. The methodology must specify
+CPU and memory definitions, including runtime/host and total VM costs where appropriate.
+
+### H3 — Startup and scaling overhead
+
+WebAssembly provides lower instance startup overhead and lower resource cost when scaling
+network-function instances than container and virtual-machine environments. Startup uses
+active readiness; scaling measurements and equal-resource constraints remain to be defined.
+
+A finding of worse performance, equal resource cost, or no practical difference may refute
+these claims within the tested conditions. Final operational thresholds and analysis rules
+must be recorded before final campaigns, rather than chosen to favor measured outcomes.
 
 ## Important principle
 
@@ -147,3 +159,12 @@ network functions, and traffic profile?
 
 Can another researcher reproduce the experimental environment and obtain comparable
 results?
+
+## Accepted experimental context
+
+The baseline compares Rust vFW/vLB logic through Wasmtime, Docker Engine, and
+QEMU/KVM/libvirt on one x86 Linux DUT. The preferred model is socket-based Layer 4,
+with a stateless firewall and round-robin load balancer. Separate physical machines
+provide identical traffic profiles and minimal backends. Clojure orchestration is outside
+the measured datapath; backend behavior remains controlled rather than an independent
+variable. Optional runtime/language comparisons do not change the primary experiment.

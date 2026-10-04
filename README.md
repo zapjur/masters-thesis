@@ -26,8 +26,8 @@ when used to implement selected network functions.
 
 The initial functions considered in the study are:
 
-- firewall,
-- load balancer.
+- stateless Layer 4 virtual firewall (`vFW`),
+- round-robin Layer 4 virtual load balancer (`vLB`).
 
 ## Main evaluation dimensions
 
@@ -93,21 +93,41 @@ thesis/
 
 Materials directly related to writing the final thesis.
 
-## Current status
+## Accepted baseline
 
-Planning and research-design phase.
+Rust provides shared VNF logic, compiled to WebAssembly for Wasmtime and native x86_64
+for Docker Engine on Linux and QEMU/KVM/libvirt Linux guests with virtio networking.
+Sharing logic reduces implementation differences; networking equivalence still requires
+validation. Rust is not assumed to be universally the fastest WebAssembly language.
 
-The following decisions are intentionally still open:
+All technologies run on the same bare-metal i7-6700K desktop (16 GB RAM, SSD), with
+Ubuntu Server 24.04 LTS as the preferred DUT OS. The M4 Max MacBook generates traffic,
+runs the Clojure `mt` orchestrator, and collects artifacts. The M1 Pro MacBook runs
+controlled backends/receivers; the main vLB benchmark uses a minimal Clojure backend.
+AWS/EC2 may support development or auxiliary experiments, but is not the primary
+measurement environment.
 
-- final experimental host architecture,
-- local hardware vs cloud,
-- concrete WebAssembly runtime,
-- container runtime,
-- virtualization stack,
-- programming language for reference implementation,
-- traffic generator,
-- benchmarking tools,
-- exact statistical methodology.
+Ansible prepares hosts, `mt deploy` deploys application artifacts, and `mt run` automates
+experiments using EDN scenarios, common environment lifecycles, identical traffic profiles,
+active readiness probes, controlled resources, and immutable raw results.
 
-These decisions should be made based on reproducibility, fairness, technical feasibility,
-and academic value rather than convenience alone.
+## Design documents
+
+- [Architecture](docs/architecture.md): machines, execution environments, and network path.
+- [Methodology](docs/methodology.md): fairness, metrics, repetitions, and analysis.
+- [Experimental framework](docs/experimental-framework.md): `mt`, Ansible, EDN, and future layout.
+- [Decision log](docs/decisions.md): accepted choices and proposals.
+- [Research](docs/research.md): research questions and falsifiable hypotheses.
+
+## Current status and unresolved decisions
+
+Planning only; implementations and provisioning have not started.
+
+Still unresolved: socket/WASI interface and TCP/UDP semantics, NIC topology and compatibility,
+traffic generator and collectors, software versions, CPU/memory allocation, traffic sizes
+and rates, warm-up/duration/cooldown, final repetition count, latency boundaries, startup
+boundaries, scalability design, and statistical/outlier procedures.
+
+A second DUT NIC, TRex, candidate sizes/load levels, and approximately 30 repetitions
+are proposals. Runtime and source-language comparisons are optional secondary experiments.
+No illustrative values constitute final methodology.

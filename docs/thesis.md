@@ -49,17 +49,19 @@ The goal is to evaluate them in the context of practical network functions.
 
 The initial experimental scope includes:
 
-### Firewall
+### Virtual firewall (`vFW`)
 
 A network function that processes traffic according to a defined filtering policy.
 
-The final functionality and packet-processing model are still to be selected.
+The baseline is a stateless Layer 4 firewall with allow/drop rules. The preferred
+interface is socket-based; precise transport semantics and rule representation remain open.
 
-### Load balancer
+### Virtual load balancer (`vLB`)
 
 A network function that distributes traffic between multiple backend destinations.
 
-The final balancing algorithm and traffic model are still to be selected.
+The baseline is a simple Layer 4 round-robin load balancer. Connection handling and
+traffic profiles remain open; the primary scenario uses a minimal backend.
 
 ## Performance dimensions
 
@@ -107,3 +109,19 @@ The study must remain evidence-driven.
 
 Any expected WebAssembly advantage is treated as a research hypothesis rather than
 an assumed result.
+
+## Implementation plan
+
+The main experiment evaluates both network performance and execution-environment/resource
+cost. Shared Rust logic will target WebAssembly/Wasmtime and native x86_64 for Docker
+Engine and QEMU/KVM/libvirt Linux guests. All variants run on the same bare-metal x86
+DUT, with separate generator/orchestrator and backend machines.
+
+The supervisor's suggested direction is that WebAssembly may achieve high network
+performance while using fewer server resources. This is tested through H1–H3 in
+[research.md](research.md), not adopted as a conclusion.
+
+See [architecture.md](architecture.md) for machine roles and
+[experimental-framework.md](experimental-framework.md) for automation. The methodology
+must define comparable CPU/memory accounting, networking semantics, and startup boundaries
+before final measurements. Toolchain/runtime language comparisons remain optional.

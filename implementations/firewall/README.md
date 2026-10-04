@@ -1,42 +1,31 @@
-# Firewall
+# Virtual Firewall (vFW)
 
-## Status
+## Status and baseline
 
-Not implemented.
+Not implemented. The accepted baseline is a small stateless Layer 4 firewall in Rust,
+sharing logic across Wasmtime/WebAssembly and native Docker/VM variants on the same DUT.
+Layer 4 / socket-based networking is initially preferred.
 
-## Purpose
+Potential policy fields are source address, destination address, source port, destination
+port, protocol, and allow/drop decision. Exact field set and rule representation remain
+open. The baseline excludes deep packet inspection, IDS/IPS, connection tracking, NAT,
+and complex policy engines.
 
-This workload will represent a network function that evaluates traffic against a filtering
-policy.
+## Requirements still to define
 
-The implementation should remain intentionally small and measurable.
+- TCP/UDP interface, WASI compatibility, and forwarding behavior.
+- Rule representation, ordering, default policy, and complexity/count matrix.
+- Exact allow/drop/reject semantics and verification of permitted/blocked traffic.
+- Meaning of packet versus payload/socket operation for measured throughput.
+- Equivalent behavior and network paths across native and WebAssembly targets.
 
-## Requirements to define
+Stateless filtering does not resolve whether TCP transport handling itself requires
+connection state; document this distinction rather than adding stateful firewall policy.
+A simple TCP/UDP receiver on the M1 Pro may verify correct forwarding.
 
-Before implementation, decide:
+## Candidate experimental dimensions
 
-- network layer,
-- packet or request processing model,
-- filtering rule representation,
-- number and complexity of rules,
-- allowed and rejected traffic behavior,
-- stateful vs stateless operation,
-- whether connection tracking is required.
-
-## Initial preference
-
-Prefer a stateless design unless a stateful firewall provides a clear research benefit.
-
-A simpler function reduces uncontrolled implementation differences between execution
-technologies.
-
-## Experimental characteristics
-
-Potential workload dimensions include:
-
-- packets per second,
-- packet size,
-- number of filtering rules,
-- allow/drop ratio.
-
-These are not yet final.
+Rule count, packet/payload size, packets/s or other appropriate L4 throughput unit,
+and allow/drop ratio are candidates, not a finalized matrix. Intentional drops must be
+distinguished from overload loss. See [methodology.md](../../docs/methodology.md) and
+D017 in [decisions.md](../../docs/decisions.md). No application code is introduced yet.

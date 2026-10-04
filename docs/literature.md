@@ -126,7 +126,7 @@ When adding a paper, use:
 **Year:**  
 **Venue:**  
 **DOI / URL:**  
-**Status:** verified / TODO verify
+**Status:** verified / TODO: verify source
 
 #### Relevance
 

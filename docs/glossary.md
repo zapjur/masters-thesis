@@ -13,7 +13,7 @@ A concrete execution engine should be referred to as a WebAssembly runtime.
 
 Software responsible for loading and executing WebAssembly modules.
 
-The concrete runtime used in the experiments has not yet been selected.
+Wasmtime is the primary runtime; its version and WASI/socket configuration remain open.
 
 ## WASI
 
@@ -33,7 +33,7 @@ kernel while executing in isolated namespaces with controlled resources.
 
 Software responsible for creating and managing containers.
 
-The runtime used in the experiments has not yet been selected.
+Docker Engine on Linux is the baseline container environment.
 
 ## Virtual machine
 
@@ -43,6 +43,7 @@ emulation and typically containing its own operating-system kernel.
 ## Hypervisor
 
 Software or system component responsible for providing and managing virtual machines.
+The baseline VM stack is QEMU/KVM/libvirt with a Linux guest and virtio networking.
 
 ## Network function
 
@@ -93,7 +94,8 @@ Amount of successfully processed traffic per unit of time.
 Depending on the experiment, this may be represented as:
 
 - packets per second,
-- requests per second,
+- connections per second,
+- requests per second where appropriate,
 - bits per second.
 
 ## Startup time
@@ -102,3 +104,58 @@ Time between initiating creation/startup of the network-function environment and
 function becoming ready to process traffic correctly.
 
 The final measurement boundary must be precisely defined.
+
+## vFW / vLB
+
+Virtual firewall / virtual load balancer. The thesis baselines are stateless Layer 4
+filtering and simple Layer 4 round-robin balancing, respectively.
+
+## Layer 4 / socket-based networking
+
+The initial preferred transport-level interface for the workloads. Exact TCP/UDP,
+forwarding, and framing semantics remain to be defined; socket processing does not
+necessarily mean processing raw Ethernet frames. Stateless firewall policy is distinct
+from any transport connection state required by the implementation.
+
+## DUT
+
+Device Under Test. The common bare-metal x86 i7-6700K Linux desktop runs all tested
+execution environments. Supporting MacBooks are not primary DUTs.
+
+## mt
+
+Master-thesis: the planned Clojure experiment orchestrator/CLI on the M4 Max. It manages
+application deployment and experiment lifecycles outside the measured VNF datapath.
+
+## EDN
+
+Extensible Data Notation. The accepted format for experiment/scenario definitions;
+illustrative values are not final methodology. Run metadata may also use EDN.
+
+## Ansible
+
+The selected host provisioning/configuration tool. It manages machine/OS readiness,
+while `mt deploy` manages artifacts and `mt run` manages experiments.
+
+## Traffic profile
+
+Reusable workload definition independent of execution environment, applied identically
+to Wasmtime, Docker, and VM runs. Protocol, size, rate, and connections require units.
+
+## Active readiness
+
+A probe demonstrating the VNF can correctly process traffic. Startup time is conceptually
+the first successful probe timestamp minus the start-command timestamp; exact boundaries
+and probe intervals remain open.
+
+## Campaign and repetition
+
+A campaign groups scenario runs; a repetition repeats a configured measurement. Exact
+ID/storage conventions are open. Multiple repetitions are mandatory; approximately 30
+per scenario is a proposal.
+
+## Total environment cost
+
+Resource consumption including relevant runtime/container/guest and host virtualization
+overhead. It must be distinguished from VNF process cost and allocated memory, particularly
+when comparing VM memory with native or WebAssembly process measurements.

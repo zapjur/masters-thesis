@@ -1,187 +1,141 @@
 # Experimental Methodology
 
-## Status
+## Status and objectives
 
-**Draft — methodology not finalized**
+**Draft — baseline principles accepted; final measurement procedures remain open.**
 
-This document will define how experiments are executed and how results are interpreted.
+Results become final thesis evidence only after the relevant methodology is documented.
+Measurements must be repeatable, comparable, reproducible, statistically meaningful,
+and resistant to measurement bias. H1–H3 are defined in [research.md](research.md).
 
-No benchmark result should be treated as thesis evidence until the relevant methodology
-has been documented here.
+## Fairness and experimental controls
 
-## Objectives
+Use the same x86 Linux DUT for Wasmtime, Docker Engine, and QEMU/KVM/libvirt. Use Rust
+with as much shared VNF logic as technically feasible. Validate equivalent behavior before
+performance experiments; document unavoidable build, API, and networking differences.
+The reference workload is stateless L4 vFW or round-robin L4 vLB using the initially
+preferred socket interface. HTTP frameworks and raw Ethernet processing are not baseline
+requirements. Precisely define TCP/UDP processing, successful forwarding, rejection/drop
+semantics, and units before benchmarking.
 
-The methodology must produce results that are:
+Traffic profiles must be independent of environment adapters. Apply the same resolved
+traffic definition to each technology, with equivalent resources, benchmark duration,
+and backend behavior. The main vLB benchmark uses the `minimal` backend. Other backend
+modes are secondary scenarios. Verify generator/backend headroom and report bottlenecks.
 
-- repeatable,
-- comparable,
-- statistically meaningful,
-- reproducible,
-- resistant to obvious measurement bias.
+Attempt equivalent compute allocation using process CPU affinity for Wasmtime, Docker
+cpuset/affinity and explicit memory controls, and pinned VM vCPUs with explicit memory
+assignment. Exact CPU IDs, core/vCPU counts, limits, and host CPU reservations remain
+proposed. Distinguish allocated resources from actual consumption; document host/kernel/
+hypervisor costs rather than comparing guest VNF RSS to total Wasmtime memory.
+Control power/performance mode, background processes, network configuration, software
+versions, and compiler settings. Record controls and exceptions for every campaign.
 
-## General experiment structure
+## Automated execution and ordering
 
-A benchmark run should eventually follow a procedure similar to:
+`mt` automates validation, reset, readiness, warm-up, measurement, collection, cleanup,
+and cooldown. The complete iteration lifecycle is owned by
+[experimental-framework.md](experimental-framework.md).
 
-1. prepare the environment,
-2. verify configuration,
-3. start the tested network function,
-4. wait for initialization if required,
-5. perform warm-up,
-6. start measurement,
-7. generate controlled traffic,
-8. record application/network metrics,
-9. record CPU and memory utilization,
-10. stop the workload,
-11. store results and metadata,
-12. restore the environment to a known state.
+Multiple repetitions are mandatory. Approximately 30 repetitions per scenario is a
+starting proposal, not a statistical requirement. Pilot variance, confidence goals,
+effect sizes, and execution cost determine the final count.
 
-The exact procedure remains to be specified.
+Support randomized ordering, preferably randomized/interleaved blocks across technologies
+within each scenario. Do not run all Wasm repetitions, then all Docker, then all VM
+repetitions in a fixed sequence. Record the realized order and any randomization seed
+for reproducibility. Reset state and account for carry-over between iterations.
+
+Warm-up must address compilation/JIT where applicable, caches, runtime initialization,
+connections, and allocation. Use identical or explicitly justified warm-up procedures.
+Cold/warm startup and compilation-cache conditions need separate definitions. Warm-up,
+measurement duration, cooldown, and final repetitions are not yet finalized.
 
 ## Metrics
 
-### Latency
-
-Open questions:
-
-- one-way or round-trip time,
-- network-level or application-level latency,
-- mean vs median vs percentiles,
-- p50,
-- p95,
-- p99,
-- possibly p99.9.
-
-Latency distributions should be retained when possible instead of storing only averages.
-
 ### Throughput
 
-Potential representations include:
+Report successful processing per unit time: packets/s, bits/s, connections/s, or requests/s
+where appropriate. Define the sustainable-throughput criterion, offered versus achieved
+load, loss/error accounting, and saturation conditions. For vFW, intentional policy drops
+must be distinguishable from overload losses. A socket operation or payload is not
+necessarily one network packet.
 
-- packets per second,
-- requests per second,
-- bits per second.
+### Latency
 
-The final unit depends on the selected network-function model.
+Retain distributions when possible and report p50, p95, and p99; arithmetic mean alone
+is insufficient. One-way versus round-trip, measurement endpoints, protocol framing,
+clock handling, error/timeout treatment, and optional p99.9 remain open. Quantify backend
+and transport contribution when interpreting VNF latency.
 
-### CPU utilization
+### CPU
 
-CPU consumption should be measured in a way that allows comparison across technologies.
+Measure execution/resource cost. Define process/runtime, host/kernel, container, and
+hypervisor accounting and choose CPU time versus percentage with consistent normalization.
+A possible derived efficiency metric is throughput / CPU usage; specify units and CPU
+allocation before interpreting it. Collectors must have measured/controlled overhead.
 
-Questions to resolve:
+### Memory
 
-- whole-system CPU vs process-level CPU,
-- CPU time vs percentage,
-- host overhead,
-- hypervisor overhead.
-
-### Memory utilization
-
-Potential measurements include:
-
-- process RSS,
-- runtime memory,
-- container memory,
-- VM allocated memory,
-- host memory impact.
-
-A fair cross-technology definition must be established.
+Distinguish VNF/process memory, runtime/container overhead, and total environment cost.
+For VMs include appropriate guest/environment and host virtualization costs; guest VNF
+RSS alone is not total VM cost. Define allocated, resident, and incremental memory clearly,
+including idle baselines and any shared-memory accounting. Final metric/tool choices remain open.
 
 ### Startup time
 
-Startup time must have a precise start and end event.
+Use active readiness detection, never a fixed sleep as the definition of readiness.
 
-Potential definition:
+```text
+startup_time = first_successful_ready_probe - start_command_timestamp
+```
 
-> Time between issuing the start request and the network function becoming ready to
-> correctly process traffic.
-
-This requires an objective readiness test.
+The probe must demonstrate correct traffic processing, not merely process existence.
+Define equivalent starting states, whether VM boot/environment creation is included,
+cache/image preparation, timing location, probe interval, timeout, and readiness criterion.
+Probe granularity and remote-control overhead affect this measured boundary and must be
+recorded. Warm-up follows readiness and is a separate phase.
 
 ### Scalability
 
-Scalability may be tested by changing:
+Potential dimensions are offered load, VNF instance count, CPU resources, and connection
+count. Select the final design before campaigns. H3 requires explicit instance-scaling
+resource-cost measurements; offered-load scaling alone does not test that entire claim.
 
-- offered traffic,
-- number of connections,
-- number of instances,
-- number of CPU cores.
+## Traffic proposals
 
-The final definition remains open.
+Reusable profiles may cover TCP/UDP, payload/packet sizes, connection counts, offered rates,
+and steady/bursty traffic. Candidate sizes are 64, 256, 512, 1024, and 1500 bytes; an
+IMIX-like profile is optional. Specify payload versus wire size and framing overhead.
+Exact sizes, load levels (including any percentage reference), and rates remain proposed.
 
-## Warm-up
+TRex is a candidate, not the accepted generator. Verify hardware/NIC compatibility,
+socket-workload semantics, and the ability to preserve the accepted M4 generator role.
+Simpler development tools are permitted. Any required role change needs an explicit
+proposal rather than moving traffic generation onto the DUT silently.
 
-Experiments may require a warm-up period because of:
+## Metadata and source traceability
 
-- JIT compilation,
-- caches,
-- runtime initialization,
-- connection establishment,
-- memory allocation.
-
-The warm-up procedure must be identical or explicitly justified for each technology.
-
-Special care is required if the selected WebAssembly runtime uses JIT compilation.
-
-## Repetitions
-
-Every scenario should be repeated multiple times.
-
-The final number of repetitions should be selected based on:
-
-- variance,
-- execution cost,
-- statistical confidence.
-
-Do not rely on a single benchmark run.
-
-## Randomization
-
-If environmental drift is observable, experiment order should be randomized or interleaved.
-
-Avoid running all tests of one technology first and another technology hours later if this
-could introduce time-dependent bias.
-
-## Resource isolation
-
-Potential controls include:
-
-- fixed CPU allocation,
-- CPU pinning,
-- disabling unnecessary background processes,
-- fixed power/performance mode,
-- fixed memory limits,
-- fixed network configuration.
-
-The final controls depend on the selected hardware and operating system.
-
-## Raw measurements
-
-Raw benchmark results must be stored separately from processed output.
-
-Raw measurements must never be manually edited.
-
-Derived metrics, statistical summaries, and figures should be reproducible from scripts.
-
-## Experiment metadata
-
-Each benchmark execution should eventually record metadata similar to:
+Each result must be traceable to source and environment. The following is a conceptual
+field schema, not a requirement to use YAML for scenario definitions (which use EDN):
 
 ```yaml
 experiment_id:
 timestamp:
 git_commit:
 
-host:
-  hostname:
+function:
+technology:
+repetition:
+
+dut:
   cpu:
   memory:
   os:
   kernel:
 
 implementation:
-  function:
-  technology:
+  language:
   version:
   compiler:
   compiler_flags:
@@ -192,74 +146,45 @@ runtime:
   configuration:
 
 traffic:
-  generator:
-  profile:
-  packet_size:
-  connections:
+  protocol:
+  payload_size:
   rate:
+  connections:
 
 benchmark:
-  duration:
   warmup:
-  repetition:
+  duration:
+  cooldown:
 ```
 
-The exact schema will be implemented later.
+Also record generator/backend versions and configuration, guest OS/kernel, host identities,
+NIC/topology details, resource allocations, resolved scenario, environment adapter settings,
+measurement/probe tools and intervals, ordering, and failures where applicable. The exact
+schema may evolve. Record `git rev-parse HEAD` for every campaign/run. Refusing final
+campaigns with uncommitted changes is proposed; the policy is not implemented yet.
 
-## Statistical analysis
+## Raw data and statistical analysis
 
-The final analysis should consider:
+Raw results, logs, and metadata are immutable; processed data and figures are separate.
+Never manually edit raw measurements or silently remove failed experiments/outliers.
+Validate completeness, distinguish failures from completed runs, and document exclusions.
+Analysis scripts must reproduce every derived table/figure and retain provenance.
 
-- distribution of results,
-- variance,
-- median,
-- arithmetic mean where appropriate,
-- percentile latency,
-- confidence intervals.
+Consider distributions, variance, median, mean where appropriate, percentile latency,
+confidence intervals, effect sizes, and practical relevance. Exact significance tests
+remain unresolved and must suit pilot distributions and the experimental design.
+Define hypotheses' operational thresholds, outlier handling, exclusion rules, final
+repetition count, and analysis procedures before final campaigns. Do not select favorable
+tests or exclusions retrospectively from final results; retain all raw observations.
 
-Possible statistical significance tests should only be selected after examining the
-measurement distributions.
+## Remaining decisions before final measurements
 
-Do not choose tests purely for complexity.
+- Networking/WASI interface, transport semantics, and functional-equivalence tests.
+- NIC topology, generator, collectors, and generator/backend capacity checks.
+- Exact OS/guest/runtime/toolchain versions and build flags.
+- Resource allocation, overhead accounting, startup boundaries, and clock/probe procedures.
+- Traffic matrix, saturation criterion, durations, ordering, repetitions, and scaling design.
+- Statistical thresholds, confidence procedures, tests, and outlier policy.
 
-Effect size and practical relevance are more important than reporting only a p-value.
-
-## Outliers
-
-Outlier handling must be defined before the final analysis.
-
-Raw observations should never be silently deleted.
-
-If observations are excluded, the reason and procedure must be documented.
-
-## Benchmark fairness
-
-Whenever possible:
-
-- identical function logic should be used,
-- identical workload should be used,
-- identical host resources should be allocated,
-- identical benchmark duration should be used.
-
-Technology-specific differences that cannot be eliminated must be documented.
-
-## Required decisions before benchmarking
-
-The following must be defined before collecting final thesis measurements:
-
-- benchmark host,
-- target architecture,
-- operating system,
-- WebAssembly runtime,
-- container runtime,
-- virtualization technology,
-- reference implementation language,
-- network-function interface,
-- traffic generator,
-- traffic model,
-- measurement tools,
-- warm-up duration,
-- benchmark duration,
-- number of repetitions,
-- system resource controls,
-- statistical analysis procedure.
+Accepted technology/host choices are in [decisions.md](decisions.md); they are not still
+undecided. Deployment and feasibility verification remain future work.

@@ -1,25 +1,31 @@
 # Infrastructure
 
-This directory will contain infrastructure configuration required to run the experiments.
+## Accepted plan; not implemented
 
-The concrete infrastructure is intentionally not selected yet.
+The common bare-metal DUT is the i7-6700K x86 desktop (16 GB RAM, SSD), running Linux
+with Ubuntu Server 24.04 LTS as the preferred OS. It hosts Wasmtime, Docker Engine,
+and QEMU/KVM/libvirt Linux guests using virtio networking. All three technologies are
+measured on this DUT. M4 Max and M1 Pro remain generator/orchestrator and backend roles.
 
-Possible future contents include configuration for:
+## Responsibility boundaries
 
-- WebAssembly runtime,
-- container runtime,
-- virtual machines,
-- virtual networking,
-- benchmark hosts,
-- system tuning.
+Ansible provisions/configures machine and OS prerequisites: packages, users, SSH, runtime
+installation, directories, networking, system tuning, and services. `mt deploy` manages
+application/artifact builds and deployment; `mt run` controls benchmark lifecycles.
+Ansible is not the primary per-benchmark orchestration engine.
 
-## Design objective
+Future `infra/ansible/` inventory, roles (`common`, `generator`, `dut`, `backend`), and
+`site.yml` are documented in [experimental-framework.md](../docs/experimental-framework.md).
+No roles, inventory, dependency installation, host configuration, images, or VMs are
+created during this planning task.
 
-Infrastructure should make the three execution environments as comparable as possible.
+## Open configuration and hardware work
 
-## Important
+Evaluate a second DUT NIC for separate ingress/egress; do not assume it exists. Verify
+links, routing, NIC/traffic-generator compatibility, management access, and host headroom.
+Exact versions, Linux guest, CPU affinity/vCPU pinning, memory allocation, power controls,
+and network paths remain unresolved. See [architecture.md](../docs/architecture.md).
 
-Do not introduce Kubernetes, Terraform, Ansible, or cloud-specific infrastructure solely
-for convenience.
-
-Use them only if they solve an identified reproducibility or experimental-control problem.
+AWS/EC2 may support development, CI, functional/reproducibility tests, or auxiliary studies;
+final primary measurements use the bare-metal DUT. Kubernetes, Terraform, service mesh,
+and additional cloud infrastructure are not introduced by these decisions.
