@@ -1,0 +1,3 @@
+;; Saved experiment sources and downloaded tool archives are immutable artifacts,
+;; not active project code. Keep namespace checking enabled for project sources.
+{:exclude-files "(^|/)(experiments/local|\\.cache)/"}

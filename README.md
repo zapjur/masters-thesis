@@ -113,6 +113,7 @@ active readiness probes, controlled resources, and immutable raw results.
 
 ## Design documents
 
+- [TCP feasibility results](docs/tcp-feasibility.md): native/WASIp2 checks, tools, reproduction, and limits.
 - [L7 firewall milestone](docs/l7-firewall.md): proposed behavior, correctness cases, and implementation gates.
 - [DUT inventory](docs/dut-inventory.md): verified hardware/software and remaining checks.
 - [Architecture](docs/architecture.md): machines, execution environments, and network path.
@@ -123,12 +124,17 @@ active readiness probes, controlled resources, and immutable raw results.
 
 ## Current status and unresolved decisions
 
-Specification and DUT inspection are underway on `initial-l7-firewall`; application
-implementations and provisioning have not started. The user authorized the staged
-firewall plan. Podman with Quadlet replaces Docker (D033); verified i5-12400 hardware
-corrects the earlier i7 inventory (D034).
+The TCP feasibility milestone is implemented: identical Rust source passes 12 functional
+cases per native/WASIp2 variant on the DUT through `mt feasibility tcp` (D036).
+The custom bootstrap and functional fixtures now use Clojure/Babashka (D037), with
+no Python required for direct preparation or test execution. Ansible is optional.
+The firewall itself, full campaign framework, and container/VM deployment remain
+unimplemented. Isolated temporary Rust/Wasmtime tools are prepared by Ansible.
+Podman with Quadlet is the accepted container baseline (D033), and the verified
+i5-12400 is the accepted DUT (D034).
 
-Still unresolved: socket/WASI interface and detailed HTTP semantics, NIC topology and capacity,
+Still unresolved: the final networking/concurrency interface and detailed HTTP semantics,
+NIC topology and capacity,
 traffic generator and collectors, software versions, CPU/memory allocation, traffic sizes
 and rates, warm-up/duration/cooldown, final repetition count, latency boundaries, startup
 boundaries, scalability design, and statistical/outlier procedures.

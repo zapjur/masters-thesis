@@ -1,0 +1,2 @@
+{:source-paths ["mt/src" "mt/test" "infra/feasibility"]
+ :paths-ignore-regex [".*/experiments/local/.*" ".*/\\.cache/.*"]}

@@ -221,7 +221,14 @@ Do not infer acceptance from illustrative configuration examples.
 The user authorized proceeding with the staged L7 firewall plan. The first milestone
 is specification and verified inventory, then Wasmtime/native networking feasibility.
 Podman with Quadlet replaces Docker; do not add a second container comparison.
-See docs/l7-firewall.md, docs/dut-inventory.md, and D033–D035.
+The bounded TCP spike is now implemented and passed 12 cases per native/WASIp2
+variant through `mt feasibility tcp`. Temporary tools are scoped under D036.
+See docs/l7-firewall.md, docs/dut-inventory.md, docs/tcp-feasibility.md, and D033–D036.
+
+The user requests avoiding custom Python. Use Clojure/Babashka for controller,
+bootstrap, and functional fixtures; Rust remains the VNF/probe language (D037).
+Do not rewrite or delete historical raw artifacts that contain older Python snapshots.
+Ansible remains an optional infrastructure wrapper, with its normal controller runtime.
 
 Before substantial implementation, resolve networking feasibility, remaining architecture
 and methodology questions, and version/resource controls in the relevant documents.

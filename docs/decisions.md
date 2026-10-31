@@ -643,6 +643,94 @@ No performance campaign is authorized to substitute for these feasibility checks
 
 ---
 
+## D036 — Bounded TCP feasibility probe and isolated toolchain
+
+**Status:** accepted
+
+**Scope:** feasibility milestone only
+
+**Update:** D037 replaces the original Python fixtures and preparation scripts with
+Clojure/Babashka. The Rust probe and remaining feasibility controls remain applicable.
+
+### Decision and authorization
+
+On 2026-10-31 the user authorized implementing and running the native/Wasmtime TCP
+spike described in the work plan. Implement a dependency-free, serial Rust probe
+and automate its functional checks through an initial Clojure `mt` command, using
+controller Babashka 1.12.218. This does not select the complete framework runtime,
+HTTP parser, final concurrency model, or final benchmark configuration.
+
+Pin Rust 1.99.1 and Wasmtime 50.0.1 for the spike. Verify downloaded archives against
+SHA-256 values from the official dated Rust manifest and Wasmtime release metadata.
+Prepare these tools through an Ansible playbook in `/tmp/mt-tcp-feasibility`, with
+no sudo or system package changes. Use Rust's bundled linker and a self-contained
+`x86_64-unknown-linux-musl` native target because the DUT lacks a C compiler and
+its development packages. This does not select the final native VNF libc/target.
+The other target is `wasm32-wasip2`, executed as a command component with socket access.
+
+### Controls and temporary development differences
+
+The probe exchanges one bounded length-prefixed frame through a backend, with
+explicit accept/exchange deadlines. Both targets compile identical source. Check
+pending socket errors and peer state after connect in the shared code. No WASI HTTP
+host processes the application protocol. The scenario, exact versions, build flags,
+source/artifact hashes, Git commit and dirty status, failures, and case order are retained.
+
+Python standard-library client/backend fixtures run on DUT loopback for this functional
+check only. They are test tooling, not additional VNF language variants or final backend
+services. Final generator/backend physical roles and Clojure backend plans remain
+unchanged. `mt` collects successful and failed evidence into unique, non-overwritten
+attempt directories. No final benchmark, CPU allocation, or network mode is selected.
+
+### Evidence and limitations
+
+The complete final command passed 12 cases per variant. The first failed TCP attempt
+and a subsequent controller-reporting failure remain retained. See
+[tcp-feasibility.md](tcp-feasibility.md) for the exact attempts, source provenance,
+reproduction, observed connection-refusal difference, and untested paths. Functional
+success establishes socket feasibility for this serial probe; it does not establish
+HTTP equivalence, container/VM parity, concurrency, or any performance advantage.
+
+---
+
+## D037 — Clojure/Babashka preparation and functional fixtures
+
+**Status:** accepted
+
+### Decision and authorization
+
+The user explicitly requested avoiding Python and rewriting the custom scripts.
+Replace the original Python bootstrap and fixtures with Clojure/Babashka. Rust remains
+the only VNF/probe language; this does not introduce a language-comparison experiment.
+The Clojure client/backend fixtures now live under `mt/src/mt/tcp_check.clj`, and
+`infra/feasibility/bootstrap.clj` prepares tools from the controller.
+
+### Preparation and execution
+
+Checksum-pin the DUT's static Babashka 1.12.218 archive alongside the existing Rust
+1.99.1 and Wasmtime 50.0.1 artifacts. The controller uses curl/tar to download, verify,
+and extract archives, then OpenSSH to stage/install tools in a temporary DUT directory.
+This avoids Python and archive-extraction dependencies on the DUT. The same Clojure
+preparation command runs directly, without Ansible. The optional Ansible playbook
+delegates to this controller command and still uses Ansible's normal Python runtime
+on the controller; it executes no Python modules on the DUT.
+
+Retain the same bounded frame protocol, checks, source provenance, timeouts, unique
+attempt IDs, and partial-result collection. Do not delete or alter earlier evidence
+or source snapshots merely because they contain the former Python scripts.
+
+### Evidence
+
+A fresh `/tmp/mt-tcp-feasibility-clojure` directory was prepared using the rewritten
+bootstrap. All twelve cases passed for each Rust target through the Clojure fixtures.
+Nine local tests with 24 assertions passed. The Ansible wrapper was also exercised
+against the prepared directory with `changed=0`, confirming its delegation path.
+Migration failures and the successful new attempt are documented in
+[tcp-feasibility.md](tcp-feasibility.md), separately from the original Python-runner
+attempts. No performance results or final benchmark configuration are implied.
+
+---
+
 ## Remaining decisions
 
 D005 remains the optional Rust vs C/C++ vs TinyGo WebAssembly source-language proposal.

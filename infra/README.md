@@ -1,6 +1,6 @@
 # Infrastructure
 
-## Accepted plan; not implemented
+## Accepted plan; isolated feasibility preparation implemented
 
 The common bare-metal DUT is the i5-12400 x86 desktop (16 GB RAM, SSD), running Linux
 with verified AlmaLinux 10.2. It is intended to host Wasmtime, Podman with Quadlet,
@@ -16,9 +16,13 @@ Ansible is not the primary per-benchmark orchestration engine.
 
 Future `infra/ansible/` inventory, roles (`common`, `generator`, `dut`, `backend`), and
 `site.yml` are documented in [experimental-framework.md](../docs/experimental-framework.md).
-No roles, inventory, dependency installation, host configuration, images, or VMs are
-created during this inventory/specification milestone. Read-only homelab inspection
-has completed; see [dut-inventory.md](../docs/dut-inventory.md).
+The implemented `ansible/playbooks/prepare-tcp-feasibility.yml` reuses the private
+homelab inventory/configuration. It delegates to the controller's Clojure bootstrap,
+which also runs directly without Ansible. It installs checksum-pinned portable
+Rust/Wasmtime/Babashka tools in a temporary DUT directory, with no sudo, system package changes, images,
+VMs, or service/network configuration. See [mt instructions](../mt/README.md) and
+[the feasibility report](../docs/tcp-feasibility.md). Full host provisioning roles
+and thesis inventory are not implemented.
 
 ## Open configuration and hardware work
 

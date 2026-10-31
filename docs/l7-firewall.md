@@ -140,8 +140,9 @@ Consulted 2026-10-31:
 - [Podman performance guide](https://github.com/podman-container-tools/podman/blob/main/docs/tutorials/performance.md)
   explains why rootless network helpers must be considered in the experiment.
 
-Basic DUT inspection succeeded; see [dut-inventory.md](dut-inventory.md). Open before
+Basic DUT inspection and the bounded serial TCP spike succeeded; see
+[dut-inventory.md](dut-inventory.md) and [tcp-feasibility.md](tcp-feasibility.md). Open before
 substantial implementation: data-link topology/capacity, exact software versions,
-socket timeout/concurrency support, parser compatibility, resource controls, network
-mode, and acceptance of the detailed protocol contract. No dependencies are installed
-and no images or VMs are created by this specification.
+the final concurrency model, parser compatibility, resource controls, network
+mode, and acceptance of the detailed protocol contract. Temporary pinned Rust/Wasmtime
+tools now support the TCP spike; no images or VMs have been created.

@@ -1,0 +1,12 @@
+{:id :tcp-feasibility
+ :kind :functional-feasibility
+ :variants [:native :wasm]
+ :network :dut-loopback
+ :io-timeout-ms 400
+ :accept-timeout-ms 1000
+ :max-bytes 65536
+ :process-timeout-seconds 20
+ :warmup-seconds 0
+ :cooldown-seconds 0
+ :repetitions 1
+ :order [:native :wasm]}

@@ -20,7 +20,7 @@ remain outside committed documents.
 | systemd | RPM systemd-257-23.el10_2.2.alma.1.x86_64 |
 | Security services | SELinux enforcing/targeted; firewalld running/enabled |
 | Podman/Quadlet/OCI runtime | Accepted stack (D033); queried Podman/conmon/crun/runc RPMs absent |
-| Wasmtime/Rust toolchain | Queried wasmtime/rust/cargo RPMs absent; non-RPM installation unverified |
+| Wasmtime/Rust toolchain | Initial RPM query absent; subsequently prepared isolated Rust 1.99.1 and Wasmtime 50.0.1 under /tmp/mt-tcp-feasibility/tools (D036); Cargo not installed |
 | KVM/libvirt/QEMU and guest | CPU reports VT-x; qemu-kvm/libvirt RPMs absent; /dev/kvm access and guest unverified |
 
 Thesis source commit at inspection: `0a0d29844de5cf95056af9bbc98019cedf408138`.
@@ -86,3 +86,15 @@ initialize container storage; prefer package metadata for the initial inventory.
 The three-NIC role proposal requires physical cabling and both Macs' adapter/link
 verification. Tailscale may carry management traffic; final experiment traffic must
 use the explicitly documented data network rather than accidentally traversing it.
+
+## Subsequent feasibility preparation
+
+After the read-only inventory, the user authorized the TCP spike. The scoped Ansible
+playbook prepared pinned portable Rust/Wasmtime tools in `/tmp/mt-tcp-feasibility`
+without changing system packages. Both native and WASIp2 probes then passed functional
+checks. See [tcp-feasibility.md](tcp-feasibility.md) for observed versions and limits.
+The earlier RPM query remains an accurate record of its inspection time.
+
+The subsequent Clojure rewrite (D037) additionally prepared static Babashka 1.12.218
+in `/tmp/mt-tcp-feasibility-clojure/tools`. Its bootstrap and test fixtures require
+no Python on the DUT; original temporary tools and historical attempts remain intact.

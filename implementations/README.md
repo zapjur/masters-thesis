@@ -1,6 +1,10 @@
 # Network Function Implementations
 
-## Accepted baseline; not implemented
+## Accepted baseline; TCP feasibility probe implemented
+
+The firewall/load balancer remain unimplemented. The bounded TCP probe under
+`feasibility/tcp-forwarder/` passes native/WASIp2 functional checks; see
+[the report](../docs/tcp-feasibility.md). It is not the final VNF or concurrency model.
 
 Rust is the reference language for Layer 7 vFW followed by Layer 7 vLB.
 Share function logic across WebAssembly and native x86_64 targets wherever technically
