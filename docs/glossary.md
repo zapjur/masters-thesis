@@ -33,7 +33,8 @@ kernel while executing in isolated namespaces with controlled resources.
 
 Software responsible for creating and managing containers.
 
-Docker Engine on Linux is the baseline container environment.
+Podman on Linux is the baseline container environment. Quadlet generates systemd
+services from container definitions; `mt` remains the experiment controller.
 
 ## Virtual machine
 
@@ -121,7 +122,7 @@ from any transport connection state required by the implementation.
 
 ## DUT
 
-Device Under Test. The common bare-metal x86 i7-6700K Linux desktop runs all tested
+Device Under Test. The common bare-metal x86 i5-12400 Linux desktop runs all tested
 execution environments. Supporting MacBooks are not primary DUTs.
 
 ## mt
@@ -142,7 +143,7 @@ while `mt deploy` manages artifacts and `mt run` manages experiments.
 ## Traffic profile
 
 Reusable workload definition independent of execution environment, applied identically
-to Wasmtime, Docker, and VM runs. Protocol, size, rate, and connections require units.
+to Wasmtime, Podman, and VM runs. Protocol, size, rate, and connections require units.
 
 ## Active readiness
 

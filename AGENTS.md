@@ -183,12 +183,14 @@ Avoid calling WebAssembly itself a virtual machine unless discussing a specific 
   x86_64 builds where technically feasible. Rust is selected for fairness, portability,
   low runtime overhead, and mature tooling, not universal language performance superiority.
 - Wasmtime is the baseline WebAssembly runtime.
-- Docker Engine on Linux runs the native Rust VNF.
+- Podman with Quadlet on Linux runs the native Rust VNF (D033); `mt` controls
+  generated systemd services and performs active readiness probes.
 - QEMU/KVM/libvirt with a Linux guest and virtio networking runs the same native executable
   or an equivalent build from the same source tree.
 - All three technologies are benchmarked on the same bare-metal x86 DUT: Intel Core
-  i7-6700K, 16 GB RAM, SSD. AlmaLinux 10.2 is the user-reported installed DUT OS and current baseline;
-  kernel/package versions still need verification. The user reports three NICs.
+  i5-12400, 16 GB RAM, SSD. AlmaLinux 10.2 and the i5-12400 hardware are verified and accepted (D034).
+  Three RTL8125 NICs are verified; data-link topology remains unresolved.
+  See docs/dut-inventory.md for observed kernel, link speeds, and software state.
 - MacBook M4 Max generates traffic, runs the orchestrator, and collects final artifacts.
   MacBook M1 Pro runs backends/receivers. Neither Mac is a primary DUT.
 - Layer 7 is the current workload direction: firewall first, then load balancer.
@@ -209,16 +211,19 @@ VM/environment overhead where appropriate, rather than only guest VNF process RS
 
 NIC role assignment, TRex, exact packet/payload sizes and load levels, approximately 30
 repetitions, exact CPU/memory allocations, statistical tests, and a clean-working-tree
-check remain proposals. The user reports three DUT NICs; models, link speeds, and cabling remain unverified. Wasmtime vs WasmEdge and
+check remain proposals. Three RTL8125 DUT NICs are verified; data-link capacity and
+cabling remain unresolved. Wasmtime vs WasmEdge and
 Rust vs C/C++ vs TinyGo are optional secondary experiments, not core requirements.
 Do not infer acceptance from illustrative configuration examples.
 
 ## Current project state
 
-Documentation and planning only. No VNF, backend, `mt`, Ansible, or infrastructure
-implementation has been authorized by this planning update.
+The user authorized proceeding with the staged L7 firewall plan. The first milestone
+is specification and verified inventory, then Wasmtime/native networking feasibility.
+Podman with Quadlet replaces Docker; do not add a second container comparison.
+See docs/l7-firewall.md, docs/dut-inventory.md, and D033–D035.
 
-Before implementation is requested, resolve networking feasibility, remaining architecture
+Before substantial implementation, resolve networking feasibility, remaining architecture
 and methodology questions, and version/resource controls in the relevant documents.
 Do not install dependencies, configure hosts, build images, create VMs, or run benchmarks
 as part of a documentation-only task.

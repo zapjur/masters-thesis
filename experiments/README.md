@@ -3,7 +3,7 @@
 ## Accepted plan; not implemented
 
 EDN scenarios and reusable traffic profiles will drive the Clojure `mt` orchestrator.
-Apply the same traffic definition to Wasmtime, Docker, and VM variants. Fully automate
+Apply the same traffic definition to Wasmtime, Podman, and VM variants. Fully automate
 validation, environment reset, backend/VNF startup, active readiness, warm-up, measurement,
 collection, cleanup, cooldown, and repeated execution. Support randomized ordering,
 preferably randomized/interleaved blocks; avoid grouped fixed technology order.

@@ -2,8 +2,8 @@
 
 ## Accepted plan; not implemented
 
-The common bare-metal DUT is the i7-6700K x86 desktop (16 GB RAM, SSD), running Linux
-with Ubuntu Server 24.04 LTS as the preferred OS. It hosts Wasmtime, Docker Engine,
+The common bare-metal DUT is the i5-12400 x86 desktop (16 GB RAM, SSD), running Linux
+with verified AlmaLinux 10.2. It is intended to host Wasmtime, Podman with Quadlet,
 and QEMU/KVM/libvirt Linux guests using virtio networking. All three technologies are
 measured on this DUT. M4 Max and M1 Pro remain generator/orchestrator and backend roles.
 
@@ -17,11 +17,12 @@ Ansible is not the primary per-benchmark orchestration engine.
 Future `infra/ansible/` inventory, roles (`common`, `generator`, `dut`, `backend`), and
 `site.yml` are documented in [experimental-framework.md](../docs/experimental-framework.md).
 No roles, inventory, dependency installation, host configuration, images, or VMs are
-created during this planning task.
+created during this inventory/specification milestone. Read-only homelab inspection
+has completed; see [dut-inventory.md](../docs/dut-inventory.md).
 
 ## Open configuration and hardware work
 
-Evaluate a second DUT NIC for separate ingress/egress; do not assume it exists. Verify
+Three RTL8125 NICs are verified. One link reported 100 Mb/s and two had no carrier. Verify
 links, routing, NIC/traffic-generator compatibility, management access, and host headroom.
 Exact versions, Linux guest, CPU affinity/vCPU pinning, memory allocation, power controls,
 and network paths remain unresolved. See [architecture.md](../docs/architecture.md).

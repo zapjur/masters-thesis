@@ -77,7 +77,8 @@ The primary network functions will be:
 They provide two useful and understandable network-processing workloads while remaining
 small enough to implement experimentally.
 
-The baseline behavior is refined by D017 and D018. Transport/interface details remain open.
+The current L7 direction is defined by D031; historical L4 decisions D017 and D018
+are superseded. The detailed firewall contract is proposed in D035.
 
 ---
 
@@ -131,7 +132,9 @@ containers, and virtual machines.
 
 ## D006 — Benchmark host and physical roles
 
-**Status:** accepted
+**Status:** superseded
+
+Superseded by D034, which corrects the DUT hardware and preserves the host roles.
 
 ### Decision
 
@@ -190,7 +193,9 @@ One baseline runtime keeps the primary comparison manageable; optional runtime c
 
 ## D010 — Baseline container environment
 
-**Status:** accepted
+**Status:** superseded
+
+Superseded by D033. Historical Docker baseline retained below.
 
 ### Decision
 
@@ -357,7 +362,8 @@ Separate machine, application, and experiment lifecycles avoid provisioning work
 
 ### Decision
 
-Clojure is the planned backend language on the M1 Pro. Design one configurable service; minimal mode is the primary vLB benchmark. Deterministic delayed and cpu-light modes are optional secondary scenarios. vFW may use a simpler TCP/UDP receiver.
+Clojure is the planned backend language on the M1 Pro. Design one configurable service; minimal mode is the primary vLB benchmark. Deterministic delayed and cpu-light modes are optional secondary scenarios. For the L7 firewall (D031), the receiver must support the selected application
+protocol; the earlier TCP/UDP-only receiver sketch is insufficient for HTTP correctness.
 
 ### Rationale
 
@@ -371,7 +377,7 @@ Backend language is not the independent variable; deterministic behavior and suf
 
 ### Decision
 
-Apply the same resolved traffic definition to Wasmtime, Docker, and VM variants. Separate traffic profiles from environment adapters and automate complete experiment execution with mt.
+Apply the same resolved traffic definition to Wasmtime, the selected container, and VM variants. Separate traffic profiles from environment adapters and automate complete experiment execution with mt.
 
 ### Rationale
 
@@ -517,7 +523,9 @@ No production WAF, IDS/IPS, TLS termination, or broad body inspection is added.
 The change retains RQ1–RQ7 but changes the measured workload to application-message
 processing. Parsing, proxying, connection handling, and backend work must be controlled
 and reported; conclusions cannot be generalized to raw-packet/L4 forwarding.
-This authorizes planning updates, not dependency installation or subsystem implementation.
+At the time this direction was selected, it authorized planning updates only. The
+user subsequently authorized proceeding with the staged firewall plan; prerequisite
+feasibility and design work precedes substantial implementation (see D035).
 
 ---
 
@@ -548,6 +556,90 @@ Management / generator-facing ingress / backend-facing egress are proposed roles
 the three NICs, subject to adapter, cabling, link-capacity, and routing verification.
 No NIC assignment or host configuration is performed by this decision. Resolve the
 minimal L7 behavior and common Wasmtime/native interface before implementation.
+
+---
+
+## D033 — Podman with Quadlet as the container baseline
+
+**Status:** accepted
+
+### Decision
+
+On 2026-10-31 the user explicitly selected Podman with Quadlet to replace Docker
+Engine (D010). Podman runs the native Rust VNF; Quadlet generates its systemd service.
+This replaces the container implementation choice, not the three-technology comparison.
+No additional Docker-versus-Podman experiment is introduced.
+
+### Lifecycle and experimental controls
+
+Ansible provides host prerequisites, `mt deploy` stages artifacts/definitions, and
+`mt run` controls the generated service and probes functional readiness. systemd
+active/notify state is not the definition of VNF readiness. Pre-stage images and
+unit generation outside prepared-environment startup measurements.
+
+Rootful/rootless execution, network mode, exact Podman/OCI runtime versions, resource
+limits, and startup boundaries remain open. Explicitly account for network helpers,
+conmon, cgroups, and relevant total environment overhead. Proposed experimental units
+have no automatic restart, boot autostart, or auto-update. Validate container cgroup
+limits rather than assuming service-wrapper limits are sufficient.
+
+### Verified sources
+
+Consulted 2026-10-31: [Quadlet documentation](https://docs.podman.io/en/stable/markdown/podman-systemd.unit.5.html)
+for systemd integration and cgroup v2 requirements; [Podman performance guide](https://github.com/podman-container-tools/podman/blob/main/docs/tutorials/performance.md)
+for rootless networking considerations. Neither source proves performance on this DUT.
+
+---
+
+## D034 — Verified i5-12400 DUT and corrected hardware baseline
+
+**Status:** accepted
+
+### Decision and evidence
+
+On 2026-10-31 read-only homelab inspection reported Intel Core i5-12400, x86_64,
+six cores/twelve logical CPUs, 15415 MiB OS-visible RAM, AlmaLinux 10.2, and kernel
+`6.12.0-211.68.1.el10_2.x86_64`. The user confirmed this machine is the intended DUT.
+This replaces D006's i7-6700K inventory. The DUT remains common to all technologies;
+M4 Max and M1 Pro roles remain unchanged. RAM is nominally 16 GB; OS-visible memory
+is recorded separately. Observed storage includes NVMe and a separate SATA device.
+
+Three PCI Ethernet controllers are Realtek RTL8125 2.5GbE, using `r8169`. At inspection,
+`eno1` had carrier and a reported 100 Mb/s link; `enp3s0` and `enp4s0` had no carrier.
+Controller capability is not achieved link speed. cgroup v2 is mounted; SELinux is
+enforcing and firewalld is running. Do not silently disable either for experiments.
+
+See [dut-inventory.md](dut-inventory.md) for provenance, package-query limitations,
+and remaining checks. Management/ingress/egress roles and experimental link capacity
+remain unverified; this decision makes no network changes.
+
+---
+
+## D035 — First L7 firewall contract and feasibility gate
+
+**Status:** proposed
+
+### Proposal
+
+Use the restricted HTTP/1.1 filtering-proxy contract in [l7-firewall.md](l7-firewall.md):
+method/path rules, first-match semantics, default deny, explicit blocked response,
+no request bodies or TLS, and one request per connection in the first functional
+milestone. Parser/size/deadline details are specified there as proposals, not final
+benchmark values. This is an application-layer research workload, not a production WAF.
+
+### Work authorization and gate
+
+The user authorized proceeding with the staged plan on 2026-10-31. First deliverables
+are the firewall specification and verified inventory, followed by Wasmtime/socket
+feasibility. Prefer validating a Rust WASIp2 command component with sockets so HTTP
+parsing remains in the shared VNF. A WASI HTTP host would shift work out of the guest
+and requires an explicit fairness decision. Exact versions, dependencies, concurrency,
+resource controls, and network paths must be resolved before substantial implementation.
+
+Functional tests must verify backend non-observation for rejected requests, correct
+forwarding, framing/error behavior, deadlines, and equivalent behavior across all three
+variants. A serial correctness spike does not establish the final concurrency design.
+No performance campaign is authorized to substitute for these feasibility checks.
 
 ---
 

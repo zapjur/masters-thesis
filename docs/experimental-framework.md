@@ -13,7 +13,7 @@ in [methodology.md](methodology.md); decision status in [decisions.md](decisions
 ## Three-machine control model
 
 `mt` runs centrally on the M4 Max generator/orchestrator. It controls the x86 Linux DUT
-(Wasmtime, Docker, or QEMU/KVM/libvirt VNF and resource measurements) and the M1 Pro
+(Wasmtime, Podman, or QEMU/KVM/libvirt VNF and resource measurements) and the M1 Pro
 backend/receiver through host and SSH/process abstractions. Final artifacts are collected
 on the M4. Macs are supporting machines, not primary DUTs. Verify control/collection
 activity does not distort traffic generation or measured phases.
@@ -56,7 +56,7 @@ mt
 
 Scenario parsing/validation resolves experiment configuration. Host/process modules handle
 remote control. Environment adapters encapsulate technology-specific lifecycle details;
-the orchestrator does not directly manage Wasmtime/Docker/VM startup internals.
+the orchestrator does not directly manage Wasmtime/Podman/VM startup internals.
 Traffic profiles are reusable and independent of environment choice. Metrics collectors
 and storage preserve both successful and failed run evidence.
 

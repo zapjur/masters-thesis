@@ -96,13 +96,12 @@ Materials directly related to writing the final thesis.
 ## Accepted baseline
 
 Rust provides shared VNF logic, compiled to WebAssembly for Wasmtime and native x86_64
-for Docker Engine on Linux and QEMU/KVM/libvirt Linux guests with virtio networking.
+for Podman with Quadlet on Linux and QEMU/KVM/libvirt Linux guests with virtio networking.
 Sharing logic reduces implementation differences; networking equivalence still requires
 validation. Rust is not assumed to be universally the fastest WebAssembly language.
 
-All technologies run on the same bare-metal i7-6700K desktop (16 GB RAM, SSD), with
-AlmaLinux 10.2 as the user-reported installed DUT OS and current baseline, with three
-reported NICs. The M4 Max MacBook generates traffic,
+All technologies run on the same bare-metal i5-12400 desktop (16 GB RAM, SSD), with
+verified AlmaLinux 10.2 and three RTL8125 NICs. The M4 Max MacBook generates traffic,
 runs the Clojure `mt` orchestrator, and collects artifacts. The M1 Pro MacBook runs
 controlled backends/receivers; the main vLB benchmark uses a minimal Clojure backend.
 AWS/EC2 may support development or auxiliary experiments, but is not the primary
@@ -114,6 +113,8 @@ active readiness probes, controlled resources, and immutable raw results.
 
 ## Design documents
 
+- [L7 firewall milestone](docs/l7-firewall.md): proposed behavior, correctness cases, and implementation gates.
+- [DUT inventory](docs/dut-inventory.md): verified hardware/software and remaining checks.
 - [Architecture](docs/architecture.md): machines, execution environments, and network path.
 - [Methodology](docs/methodology.md): fairness, metrics, repetitions, and analysis.
 - [Experimental framework](docs/experimental-framework.md): `mt`, Ansible, EDN, and future layout.
@@ -122,9 +123,12 @@ active readiness probes, controlled resources, and immutable raw results.
 
 ## Current status and unresolved decisions
 
-Planning only; implementations and provisioning have not started.
+Specification and DUT inspection are underway on `initial-l7-firewall`; application
+implementations and provisioning have not started. The user authorized the staged
+firewall plan. Podman with Quadlet replaces Docker (D033); verified i5-12400 hardware
+corrects the earlier i7 inventory (D034).
 
-Still unresolved: socket/WASI interface and TCP/UDP semantics, NIC topology and compatibility,
+Still unresolved: socket/WASI interface and detailed HTTP semantics, NIC topology and capacity,
 traffic generator and collectors, software versions, CPU/memory allocation, traffic sizes
 and rates, warm-up/duration/cooldown, final repetition count, latency boundaries, startup
 boundaries, scalability design, and statistical/outlier procedures.
