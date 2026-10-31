@@ -194,7 +194,8 @@ Avoid calling WebAssembly itself a virtual machine unless discussing a specific 
 - MacBook M4 Max generates traffic, runs the orchestrator, and collects final artifacts.
   MacBook M1 Pro runs backends/receivers. Neither Mac is a primary DUT.
 - Layer 7 is the current workload direction: firewall first, then load balancer.
-  Exact application protocol and Wasmtime interfaces remain open; HTTP is proposed.
+  The first HTTP/1.1 firewall subset uses shared Rust/httparse and WASIp2 sockets
+  (D038). Final concurrency, deployment paths, and benchmark settings remain open.
 - Clojure is used for `mt` (master-thesis); EDN defines experiment scenarios.
 - Ansible configures/provisions hosts. `mt deploy` deploys applications/artifacts;
   `mt run` manages experiment lifecycles. Ansible is not the per-benchmark engine.
@@ -224,6 +225,11 @@ Podman with Quadlet replaces Docker; do not add a second container comparison.
 The bounded TCP spike is now implemented and passed 12 cases per native/WASIp2
 variant through `mt feasibility tcp`. Temporary tools are scoped under D036.
 See docs/l7-firewall.md, docs/dut-inventory.md, docs/tcp-feasibility.md, and D033–D036.
+
+The first HTTP/1.1 firewall is implemented under D038: 47 wire cases per native/WASIp2
+variant pass through `mt firewall check`, including active readiness and exact response
+parity. See docs/firewall-correctness.md. Its sequential connection model and loopback
+fixtures are functional controls, not the accepted final benchmark concurrency/topology.
 
 The user requests avoiding custom Python. Use Clojure/Babashka for controller,
 bootstrap, and functional fixtures; Rust remains the VNF/probe language (D037).

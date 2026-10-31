@@ -2,7 +2,7 @@
 
 ## Status and purpose
 
-**Accepted conceptual design — only the TCP feasibility command is implemented.**
+**Accepted conceptual design — TCP feasibility and HTTP correctness commands implemented.**
 
 `mt` means master-thesis. It is a custom Clojure CLI/framework for fully automated
 experiment control, lifecycle management, metadata generation, and artifact collection.
@@ -32,7 +32,10 @@ mt analyze
 
 The commands above are intended interfaces, not available commands. The initial
 `bb mt feasibility tcp --ssh-host ALIAS` command is implemented in `mt/` for the
-bounded development spike; see [tcp-feasibility.md](tcp-feasibility.md). `doctor` checks prerequisites;
+bounded development spike; see [tcp-feasibility.md](tcp-feasibility.md).
+The additional `bb mt firewall check --ssh-host ALIAS` command runs the first HTTP
+correctness suite; see [firewall-correctness.md](firewall-correctness.md).
+`doctor` checks prerequisites;
 `hosts` exposes availability/configuration; `deploy` builds/deploys artifacts; `run` executes
 scenarios; `status` reports lifecycle state; `results` locates artifacts; `analyze` integrates
 reproducible analysis. Exact options and behavior remain to be designed.

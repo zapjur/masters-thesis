@@ -1,0 +1,21 @@
+{:id :firewall-correctness
+ :kind :functional-correctness
+ :variants [:native :wasm]
+ :order [:native :wasm]
+ :network :dut-loopback
+ :concurrency :sequential
+ :io-timeout-ms 500
+ :accept-timeout-ms 2000
+ :max-head-bytes 8192
+ :max-headers 64
+ :max-body-bytes 65536
+ :max-connections 3
+ :process-timeout-seconds 20
+ :warmup-seconds 0
+ :cooldown-seconds 0
+ :repetitions 1
+ :policy ["allow:GET:/ready"
+          "deny:GET:/blocked"
+          "deny:GET:/priority"
+          "allow:GET:/priority"
+          "allow:GET:/allowed"]}

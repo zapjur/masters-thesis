@@ -3,20 +3,21 @@
 ## Status and objective
 
 L7 firewall first and L7 load balancer second are accepted under D031. The user
-authorized proceeding with the staged work on 2026-10-31. This document specifies
-the proposed first functional workload; it does not finalize the measurement matrix.
-Protocol details below are implementation proposals until recorded as accepted in
-[decisions.md](decisions.md). No performance results have been collected.
+authorized proceeding with the staged work on 2026-10-31. The first HTTP/1.1 subset
+is now implemented and validated natively and through Wasmtime under D038; see
+[the correctness evidence](firewall-correctness.md). This does not finalize the
+measurement matrix, concurrency design, or container/VM parity. No performance
+results have been collected.
 
 The first milestone is an HTTP filtering proxy with equivalent observable behavior
 under Wasmtime, a Linux container, and a Linux VM on the common DUT. This is a
 restricted research workload, not a production web application firewall.
 
-## Proposed functional contract
+## First functional contract (D038)
 
 | Aspect | First functional milestone |
 | --- | --- |
-| Protocol | Plain HTTP/1.1 over TCP; no TLS, HTTP/2, upgrades, or CONNECT tunneling |
+| Protocol | Plain HTTP/1.1 over TCP with ASCII headers; no TLS, HTTP/2, HEAD, upgrades, or CONNECT tunneling |
 | Topology | Generator -> firewall listener -> one fixed external HTTP backend |
 | Request target | Origin form; match the raw path before `?`, without percent decoding or normalization |
 | Policy | Ordered method/path rules; first match wins; explicit default deny |
@@ -37,12 +38,14 @@ and malformed headers. Parse before policy evaluation. The actual HTTP parser mu
 be selected and tested after confirming Wasmtime compatibility; do not implement
 a permissive ad-hoc parser just to avoid a dependency.
 
-Proposed configurable guard values for functional tests are 8 KiB total request
-head, 64 headers, 64 KiB response body, and a 5-second I/O timeout. They are not
-accepted final benchmark settings. Specify inclusive boundary behavior in tests;
+The functional EDN scenario configures 8 KiB total request head, 64 headers,
+64 KiB response body, a 500 ms exchange deadline, and a 2000 ms accept deadline.
+Local/error replies use a separate write budget capped at 250 ms. These are not
+accepted final benchmark settings. Inclusive limit behavior is tested;
 an oversized request head returns 431 and closes, with no backend request.
-An oversized/invalid backend response is a forwarding error, never a successful
-request. Enforce the response bound before committing a downstream success response.
+An invalid declared backend message is a forwarding error, never a successful
+request. The declared response bound is enforced before committing client success.
+Only HTTP/1.1 200 with one Content-Length is supported in this first backend contract.
 
 Forwarding must use the configured backend, never a client-supplied destination.
 Remove hop-by-hop headers, including headers named by Connection, and explicitly
@@ -50,6 +53,8 @@ close both connections. Define backend Host rewriting consistently across varian
 Do not add client identity headers or per-request logging to the measured path.
 
 Closing every connection deliberately includes connection setup in the workload.
+Trailing bytes after the first framed message are discarded, never forwarded or
+processed as another request/response; this is independent of TCP segmentation.
 Persistent connections require a separately documented later profile; results from
 this milestone cannot establish keep-alive or high-concurrency scalability.
 
@@ -84,10 +89,12 @@ active state, and an open port are insufficient. Reset backend counters after pr
 2. Validate Rust `wasm32-wasip2` command components and TCP sockets through Wasmtime.
    First prove accept, connect, read, write, timeout, and clean shutdown. Pin versions
    only after checking the DUT and toolchain. Compilation is outside measurements.
-3. Select a parser and shared event/I/O model supported by both targets. Shared Rust
+3. Implemented for this milestone: httparse 1.10.1 and shared sequential sockets.
+   The final event/I/O/concurrency model remains open. Shared Rust
    policy and protocol behavior are required; target adapters must remain explicit.
    A serial functional spike is allowed but is not a final throughput/scalability design.
-4. Implement the proxy and minimal external backend, then run the correctness cases.
+4. Implemented: the proxy and Clojure loopback fixture pass 47 cases per variant.
+   Deployment to the separate backend machine remains future work.
    Native builds target x86_64 Linux. Apple Silicon functional tests are development
    evidence only. No separate VNF implementation language is introduced.
 5. Package the native artifact in the selected container environment and Linux VM;
@@ -95,9 +102,9 @@ active state, and an open port are insufficient. Reset backend counters after pr
 6. Add the smallest `mt` scenario that automates the full functional lifecycle,
    including readiness, failures, cleanup, and immutable artifact collection.
 
-Expected implementation files, once the feasibility gate passes: Rust workspace
-under `implementations/firewall/`, controlled backend under `backends/`, deployment
-assets under `infra/`, and Clojure lifecycle/scenario code under `mt/`. No new service
+Implemented files include Rust under `implementations/firewall/` and Clojure checks
+under `mt/`. A controlled external backend under `backends/` and container/VM deployment
+assets under `infra/` remain future work. No new service
 API is required beyond the restricted HTTP contract. Scenario schema must include
 policy, endpoints, limits, timeouts, environment, and source/artifact identities.
 
@@ -142,7 +149,7 @@ Consulted 2026-10-31:
 
 Basic DUT inspection and the bounded serial TCP spike succeeded; see
 [dut-inventory.md](dut-inventory.md) and [tcp-feasibility.md](tcp-feasibility.md). Open before
-substantial implementation: data-link topology/capacity, exact software versions,
-the final concurrency model, parser compatibility, resource controls, network
-mode, and acceptance of the detailed protocol contract. Temporary pinned Rust/Wasmtime
-tools now support the TCP spike; no images or VMs have been created.
+final measurements: data-link topology/capacity, deployment versions, final concurrency,
+resource controls, container/VM network mode, and the benchmark matrix. The parser
+and functional HTTP subset are validated under D038. Temporary pinned tools support
+both correctness commands; no images or VMs have been created.

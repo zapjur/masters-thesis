@@ -1,6 +1,6 @@
 # mt: Initial Feasibility Command
 
-The Clojure experiment controller currently implements only `feasibility tcp`,
+The Clojure experiment controller currently implements `feasibility tcp` and `firewall check`,
 using the existing controller Babashka (tested with 1.12.218). General `deploy`,
 `run`, metric collection, Podman/VM adapters, and analysis are not implemented yet.
 No additional Clojure dependencies or JVM installation are required. The DUT uses
@@ -54,6 +54,21 @@ Do not edit results; correct code/configuration and run again with a new ID.
 Retain ignored local artifacts outside the checkout before deleting the repository
 or allowing temporary DUT storage to expire. These are development checks, not
 final thesis measurement campaigns.
+
+## HTTP firewall correctness
+
+After preparing the same tool directory, run from `mt/`:
+
+```sh
+bb mt firewall check --ssh-host DUT_ALIAS --remote-root /tmp/mt-tcp-feasibility-clojure
+```
+
+This command checksum-verifies the pinned httparse archive, stages the shared Rust
+firewall and Clojure fixtures, builds native/WASIp2 variants, and runs 47 cases per
+variant with active readiness and explicit response parity. It retains the dependency
+archive and all source/build/test evidence under a new `experiments/local/http-.../`
+directory. It requires no extra DUT package or network/service configuration.
+See [the report](../docs/firewall-correctness.md) for the contract and limitations.
 
 ## Controller checks
 

@@ -131,7 +131,8 @@ AWS/EC2 may support development, CI, functional/reproducibility tests, or auxili
 experiments, but not the primary final measurements without a new justified decision.
 
 Layer 7 workloads are the current direction, firewall first and load balancer second.
-A narrow HTTP workload is proposed; exact protocol and parsing interfaces remain open.
+A narrow HTTP/1.1 subset is implemented for the first firewall correctness milestone
+(D038). The final concurrency model, deployment paths, and benchmark matrix remain open.
 Raw Ethernet processing, DPDK, AF_XDP, and eBPF are not baseline requirements.
 The baseline excludes IDS/IPS, NAT, complex firewall policy engines, TLS termination,
 weighted routing, sticky sessions, and complex health checks. Minimal application-layer

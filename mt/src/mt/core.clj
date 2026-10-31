@@ -92,6 +92,7 @@
     (println "TCP feasibility checks passed; these are not benchmark measurements.")))
 
 (defn -main [& args]
-  (if (= (take 2 args) ["feasibility" "tcp"])
-    (feasibility! (drop 2 args))
-    (throw (ex-info "Usage: bb mt feasibility tcp --ssh-host ALIAS [--remote-root /tmp/mt-tcp-feasibility]" {}))))
+  (cond
+    (= (take 2 args) ["feasibility" "tcp"]) (feasibility! (drop 2 args))
+    (= (take 2 args) ["firewall" "check"]) ((requiring-resolve 'mt.firewall/check!) (drop 2 args))
+    :else (throw (ex-info "Usage: bb mt {feasibility tcp | firewall check} --ssh-host ALIAS [--remote-root /tmp/mt-tcp-feasibility]" {}))))

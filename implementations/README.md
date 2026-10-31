@@ -1,8 +1,10 @@
 # Network Function Implementations
 
-## Accepted baseline; TCP feasibility probe implemented
+## Accepted baseline; first HTTP firewall implemented
 
-The firewall/load balancer remain unimplemented. The bounded TCP probe under
+The restricted HTTP/1.1 firewall passes native/WASIp2 correctness checks; see
+[the evidence](../docs/firewall-correctness.md). The load balancer and container/VM
+parity remain future work. The bounded TCP probe under
 `feasibility/tcp-forwarder/` passes native/WASIp2 functional checks; see
 [the report](../docs/tcp-feasibility.md). It is not the final VNF or concurrency model.
 

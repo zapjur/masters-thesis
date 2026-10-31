@@ -619,6 +619,9 @@ remain unverified; this decision makes no network changes.
 
 **Status:** proposed
 
+**Update:** D038 accepts and implements the narrowed first HTTP functional subset;
+this broader proposal does not select final concurrency or benchmark settings.
+
 ### Proposal
 
 Use the restricted HTTP/1.1 filtering-proxy contract in [l7-firewall.md](l7-firewall.md):
@@ -728,6 +731,70 @@ against the prepared directory with `changed=0`, confirming its delegation path.
 Migration failures and the successful new attempt are documented in
 [tcp-feasibility.md](tcp-feasibility.md), separately from the original Python-runner
 attempts. No performance results or final benchmark configuration are implied.
+
+---
+
+## D038 — First shared HTTP firewall and parser
+
+**Status:** accepted
+
+**Scope:** functional correctness milestone; final benchmarking configuration remains open.
+
+### Decision and authorization
+
+The user authorized proceeding with parser validation and the first method/path firewall.
+Select checksum-pinned httparse 1.10.1 with default features disabled, keeping its
+portable non-SIMD parser path on both native Linux/musl and WASIp2. Its registry
+checksum and exact archive URL are recorded in implementations/firewall/dependencies.lock.json.
+Compile the parser directly with pinned rustc; no Cargo build scripts, C compiler,
+or additional async dependencies are required. The crate archive, licenses, sources,
+build commands, artifact hashes, and resolved scenario are retained per attempt.
+
+### Shared I/O model and protocol
+
+Use the proven blocking std::net path with a single thread and sequential connections
+for this first correctness milestone. This implements a common model without claiming
+concurrency/scaling feasibility. Tokio socket support on WASI currently requires
+tokio_unstable; adopting it and the final concurrency model remain open.
+
+Implement the D035 HTTP/1.1 subset: exact raw method/path, ordered first-match rules,
+default deny, 403 for policy rejection, 400 for malformed/unsupported requests,
+431 for request head limits, and 502 for backend errors. No request bodies, TLS,
+HEAD, CONNECT, Upgrade, Expect, or chunked transfers. Require one valid Host, reject
+duplicate Content-Length even when equal, rewrite Host to the configured fixed
+backend, and remove hop-by-hop and Connection-named headers. The backend contract
+is bounded HTTP/1.1 200 with one Content-Length. Buffer its complete bounded body
+before committing a successful client response.
+
+One request is processed per connection; trailing/pipelined bytes are discarded
+when it closes, never forwarded or treated as another request. This avoids making
+behavior depend on TCP segmentation. An exchange deadline covers request reading
+and backend forwarding. Local rejection/backend error replies have a separate
+budget capped at 250 ms to allow bounded error reporting after expiration.
+All limits and policy are explicit command arguments/resolved EDN fields.
+
+### Verification and boundaries
+
+Run identical wire cases under mt firewall check, including active allowed/denied
+readiness probes and backend non-observation assertions. Fixtures stay on DUT loopback
+for development, using Clojure/Babashka. No Podman/VM deployment or performance
+campaign is added. The larger D035 proposal and final topology/resources/scaling
+remain open beyond this functional subset.
+
+### Primary sources
+
+Consulted 2026-10-31: [httparse 1.10.1](https://docs.rs/httparse/1.10.1/httparse/),
+[registry index](https://index.crates.io/ht/tp/httparse), and
+[Tokio WASI support](https://docs.rs/tokio/latest/tokio/). These describe candidate
+interfaces; actual compatibility must be demonstrated by the retained DUT results.
+
+### Observed implementation evidence
+
+The final HTTP attempt passed 47 cases per variant (94 total), with exact client
+response parity and five native Rust unit tests. The first compile failure and the
+earlier 46-case attempt remain retained. See [firewall-correctness.md](firewall-correctness.md)
+for source provenance, limitations, and reproduction. These are functional results,
+not performance measurements.
 
 ---
 
