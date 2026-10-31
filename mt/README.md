@@ -6,6 +6,30 @@ using the existing controller Babashka (tested with 1.12.218). General `deploy`,
 No additional Clojure dependencies or JVM installation are required. The DUT uses
 checksum-pinned Babashka 1.12.218 for the Clojure fixtures; no Python is required there.
 
+## Install the local command
+
+With Babashka (`bb`) on PATH, link the launcher into a directory on your PATH:
+
+```sh
+mkdir -p ~/.local/bin
+ln -s /absolute/path/to/masters-thesis/mt/bin/mt ~/.local/bin/mt
+```
+
+If `~/.local/bin` is not already on PATH, add `export PATH="$HOME/.local/bin:$PATH"`
+to your shell configuration and open a new terminal. The launcher resolves its own
+symlink to locate the checkout; it works from any directory and uses the repository's
+sources/configuration. Keep the checkout at that location or update the symlink after
+moving it. No code is copied and no additional dependencies are installed.
+
+```sh
+mt --help
+mt firewall check --ssh-host DUT_ALIAS --remote-root /tmp/mt-tcp-feasibility-clojure
+mt feasibility tcp --ssh-host DUT_ALIAS --remote-root /tmp/mt-tcp-feasibility-clojure
+```
+
+The `bb mt ...` tasks from this directory continue to work too. Help does not contact
+the DUT. CLI failures return a nonzero exit code.
+
 ## Prepare the DUT
 
 Use the existing homelab Ansible configuration and private inventory. From

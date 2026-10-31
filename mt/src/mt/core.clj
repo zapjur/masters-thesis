@@ -91,8 +91,19 @@
         (command! ["scp" "-q" "-r" "-o" "BatchMode=yes" (str host ":" work "/results") (str output)])))
     (println "TCP feasibility checks passed; these are not benchmark measurements.")))
 
+(def usage
+  (str "Usage: mt COMMAND [OPTIONS]\n\n"
+       "Commands:\n"
+       "  feasibility tcp   Check shared native/WASIp2 TCP forwarding\n"
+       "  firewall check    Check the shared HTTP firewall\n\n"
+       "Options:\n"
+       "  --ssh-host ALIAS   Existing OpenSSH alias for the DUT\n"
+       "  --remote-root DIR  Prepared DUT directory (default: /tmp/mt-tcp-feasibility)\n"
+       "  -h, --help         Show this help\n"))
+
 (defn -main [& args]
   (cond
+    (or (empty? args) (= args ["--help"]) (= args ["-h"]) (= args ["help"])) (println usage)
     (= (take 2 args) ["feasibility" "tcp"]) (feasibility! (drop 2 args))
     (= (take 2 args) ["firewall" "check"]) ((requiring-resolve 'mt.firewall/check!) (drop 2 args))
-    :else (throw (ex-info "Usage: bb mt {feasibility tcp | firewall check} --ssh-host ALIAS [--remote-root /tmp/mt-tcp-feasibility]" {}))))
+    :else (throw (ex-info usage {}))))
