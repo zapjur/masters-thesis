@@ -53,15 +53,17 @@ The initial experimental scope includes:
 
 A network function that processes traffic according to a defined filtering policy.
 
-The baseline is a stateless Layer 4 firewall with allow/drop rules. The preferred
-interface is socket-based; precise transport semantics and rule representation remain open.
+The baseline is a Layer 7 firewall, developed before the load balancer. A minimal
+HTTP request-filtering workload is proposed; protocol, policy, and rejection semantics
+remain open.
 
 ### Virtual load balancer (`vLB`)
 
 A network function that distributes traffic between multiple backend destinations.
 
-The baseline is a simple Layer 4 round-robin load balancer. Connection handling and
-traffic profiles remain open; the primary scenario uses a minimal backend.
+The baseline is a Layer 7 load balancer, developed after the firewall. HTTP with
+per-request round-robin selection is proposed; connection handling and traffic profiles
+remain open. The primary scenario uses a minimal backend.
 
 ## Performance dimensions
 

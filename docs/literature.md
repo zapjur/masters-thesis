@@ -607,8 +607,9 @@ Throughput, connection rate, concurrent connection capacity, transaction latency
 
 #### Limitations
 
-Primarily richer L7 security workloads; this thesis's stateless L4 vFW is deliberately narrower.
-Do not add DPI, TLS, or HTTP to satisfy this RFC or claim full compliance.
+Primarily richer L7 security workloads; the current L7 vFW direction (D031) still
+requires a narrowly defined policy. HTTP is proposed on workload grounds, not to
+satisfy this RFC. Do not add broad body inspection or TLS or claim full compliance.
 
 #### Thesis usage
 
@@ -727,7 +728,7 @@ it is not a claim that no prior equivalent study exists. H1–H3 remain falsifia
    obtain L05's proceedings paper. Preserve the original links even if a label proves inaccurate.
 2. Extract exact hardware, versions, build flags, startup definitions, workloads, repetitions,
    and uncertainty treatment from L03–L08 and L13 before quoting quantitative results.
-3. Search more narrowly for standalone WebAssembly L4 firewall/load-balancer evaluations,
+3. Search more narrowly for standalone WebAssembly L7 firewall/load-balancer evaluations,
    WASI socket host-call/copy overhead, and fair three-environment NFV comparisons.
    Proxy-Wasm is currently a technical example, not sufficient empirical coverage of this area.
 4. Add authoritative namespace/isolation and virtio/QEMU/libvirt references for the selected

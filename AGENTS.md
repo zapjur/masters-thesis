@@ -19,8 +19,8 @@ in the implementation of selected network functions.
 
 The initial network functions are:
 
-- stateless Layer 4 virtual firewall (`vFW`)
-- simple round-robin Layer 4 virtual load balancer (`vLB`)
+- Layer 7 virtual firewall (`vFW`)
+- Layer 7 virtual load balancer (`vLB`)
 
 The primary metrics are:
 
@@ -187,11 +187,12 @@ Avoid calling WebAssembly itself a virtual machine unless discussing a specific 
 - QEMU/KVM/libvirt with a Linux guest and virtio networking runs the same native executable
   or an equivalent build from the same source tree.
 - All three technologies are benchmarked on the same bare-metal x86 DUT: Intel Core
-  i7-6700K, 16 GB RAM, SSD. Ubuntu Server 24.04 LTS is the accepted preferred DUT OS;
-  installation and exact versions still need verification.
+  i7-6700K, 16 GB RAM, SSD. AlmaLinux 10.2 is the user-reported installed DUT OS and current baseline;
+  kernel/package versions still need verification. The user reports three NICs.
 - MacBook M4 Max generates traffic, runs the orchestrator, and collects final artifacts.
   MacBook M1 Pro runs backends/receivers. Neither Mac is a primary DUT.
-- Layer 4 / socket-based networking is the initial preferred abstraction.
+- Layer 7 is the current workload direction: firewall first, then load balancer.
+  Exact application protocol and Wasmtime interfaces remain open; HTTP is proposed.
 - Clojure is used for `mt` (master-thesis); EDN defines experiment scenarios.
 - Ansible configures/provisions hosts. `mt deploy` deploys applications/artifacts;
   `mt run` manages experiment lifecycles. Ansible is not the per-benchmark engine.
@@ -206,9 +207,9 @@ VM/environment overhead where appropriate, rather than only guest VNF process RS
 
 ## Proposals and open methodology
 
-A second DUT NIC, TRex, exact packet/payload sizes and load levels, approximately 30
+NIC role assignment, TRex, exact packet/payload sizes and load levels, approximately 30
 repetitions, exact CPU/memory allocations, statistical tests, and a clean-working-tree
-check remain proposals. A second NIC is not known to exist. Wasmtime vs WasmEdge and
+check remain proposals. The user reports three DUT NICs; models, link speeds, and cabling remain unverified. Wasmtime vs WasmEdge and
 Rust vs C/C++ vs TinyGo are optional secondary experiments, not core requirements.
 Do not infer acceptance from illustrative configuration examples.
 

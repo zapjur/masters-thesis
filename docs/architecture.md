@@ -18,8 +18,9 @@ Compare both network performance and environment/resource overhead on a common D
 | x86 desktop: i7-6700K, 16 GB RAM, SSD | Bare-metal DUT | Wasmtime, Docker Engine, QEMU/KVM/libvirt, VNF execution, resource measurements |
 | MacBook M1 Pro | Backend and receiver | Controlled backend services and traffic destinations |
 
-The DUT runs Linux; Ubuntu Server 24.04 LTS is the accepted preferred OS, not a claim
-that installation/configuration is complete. Native VNF builds target x86_64.
+The user reports AlmaLinux 10.2 installed on the DUT and three NICs (D032). This is
+the current OS baseline; exact kernel/package versions and NIC models/link speeds
+remain unverified. Native VNF builds target x86_64.
 All three execution technologies use this same DUT. The Apple Silicon machines are
 supporting hosts, not DUT variants; their capacity must be verified to avoid bottlenecks.
 
@@ -71,16 +72,15 @@ Generator -> ingress -> DUT -> egress -> Backend
 ```
 
 Physical separation of generator and backend traffic is preferred where practical.
-A second DUT NIC is a proposed hardware improvement: one ingress NIC and one egress NIC.
-It is not known to exist and is not yet a hard requirement. Evaluate available NICs,
+The user reports three DUT NICs. Separate management, ingress, and egress roles are
+proposed, not assigned. Evaluate available NICs,
 link speeds, cabling/switch layout, compatibility, and routing before selecting the setup.
 
 Container networking, guest virtio networking, and Wasmtime socket access may introduce
 different host paths. Record and control these differences rather than attributing all
-observed overhead solely to execution technology. L4/socket-based processing is the
-initial preferred abstraction; it does not automatically imply raw packet forwarding.
-TCP/UDP semantics, firewall rejection/drop behavior, and load-balancer transport handling
-remain unresolved.
+observed overhead solely to execution technology. L7 is the current workload direction, with firewall first and load balancer second.
+A minimal HTTP proxy workload is proposed. Application parsing, firewall rejection,
+load-balancer request selection, and transport handling remain unresolved.
 
 ## Backends
 
@@ -114,3 +114,16 @@ are permitted. Changing the primary bare-metal baseline requires evidence and a 
 - Specify background activity controls, power/performance settings, and clock handling.
 
 Exact CPU IDs, resource limits, traffic tools, and collectors are not selected here.
+
+## Existing DUT tooling and next planning step
+
+The sibling `../homelab` repository supplies an `hl` power/SSH CLI and a read-only
+Ansible inspection playbook; it does not yet provision the host. See D032 for
+provenance requirements. No host commands were executed for this documentation update.
+
+Before implementation, specify one minimal L7 firewall behavior, then verify a shared
+Rust/Wasmtime/native integration path. HTTP/1.1 without TLS, method/path filtering,
+an explicit blocked response, and a minimal forwarding backend are proposals. Define
+parser limits, malformed-request behavior, connection reuse, and response framing.
+The subsequent L7 load balancer can reuse the validated transport/parser path if feasible;
+per-request round-robin is proposed. Keep the same behavior across all three variants.

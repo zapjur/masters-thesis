@@ -26,8 +26,8 @@ when used to implement selected network functions.
 
 The initial functions considered in the study are:
 
-- stateless Layer 4 virtual firewall (`vFW`),
-- round-robin Layer 4 virtual load balancer (`vLB`).
+- Layer 7 virtual firewall (`vFW`),
+- Layer 7 virtual load balancer (`vLB`).
 
 ## Main evaluation dimensions
 
@@ -101,7 +101,8 @@ Sharing logic reduces implementation differences; networking equivalence still r
 validation. Rust is not assumed to be universally the fastest WebAssembly language.
 
 All technologies run on the same bare-metal i7-6700K desktop (16 GB RAM, SSD), with
-Ubuntu Server 24.04 LTS as the preferred DUT OS. The M4 Max MacBook generates traffic,
+AlmaLinux 10.2 as the user-reported installed DUT OS and current baseline, with three
+reported NICs. The M4 Max MacBook generates traffic,
 runs the Clojure `mt` orchestrator, and collects artifacts. The M1 Pro MacBook runs
 controlled backends/receivers; the main vLB benchmark uses a minimal Clojure backend.
 AWS/EC2 may support development or auxiliary experiments, but is not the primary
@@ -128,6 +129,6 @@ traffic generator and collectors, software versions, CPU/memory allocation, traf
 and rates, warm-up/duration/cooldown, final repetition count, latency boundaries, startup
 boundaries, scalability design, and statistical/outlier procedures.
 
-A second DUT NIC, TRex, candidate sizes/load levels, and approximately 30 repetitions
+NIC role assignment, TRex, candidate sizes/load levels, and approximately 30 repetitions
 are proposals. Runtime and source-language comparisons are optional secondary experiments.
 No illustrative values constitute final methodology.

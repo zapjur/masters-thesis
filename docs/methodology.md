@@ -13,10 +13,11 @@ and resistant to measurement bias. H1–H3 are defined in [research.md](research
 Use the same x86 Linux DUT for Wasmtime, Docker Engine, and QEMU/KVM/libvirt. Use Rust
 with as much shared VNF logic as technically feasible. Validate equivalent behavior before
 performance experiments; document unavoidable build, API, and networking differences.
-The reference workload is stateless L4 vFW or round-robin L4 vLB using the initially
-preferred socket interface. HTTP frameworks and raw Ethernet processing are not baseline
-requirements. Precisely define TCP/UDP processing, successful forwarding, rejection/drop
-semantics, and units before benchmarking.
+The reference workloads are now L7 vFW followed by L7 vLB (D031). HTTP request filtering
+and per-request round-robin balancing are proposed, not finalized. Define protocol,
+parsing/framing limits, connection reuse, successful forwarding, rejection semantics,
+and request/payload units before benchmarking. Account for HTTP parsing and transport
+work consistently across variants; raw Ethernet processing is not required.
 
 Traffic profiles must be independent of environment adapters. Apply the same resolved
 traffic definition to each technology, with equivalent resources, benchmark duration,

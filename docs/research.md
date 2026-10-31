@@ -163,8 +163,8 @@ results?
 ## Accepted experimental context
 
 The baseline compares Rust vFW/vLB logic through Wasmtime, Docker Engine, and
-QEMU/KVM/libvirt on one x86 Linux DUT. The preferred model is socket-based Layer 4,
-with a stateless firewall and round-robin load balancer. Separate physical machines
+QEMU/KVM/libvirt on one x86 Linux DUT. The current direction is Layer 7,
+with a firewall first and load balancer second. Exact application semantics remain open. Separate physical machines
 provide identical traffic profiles and minimal backends. Clojure orchestration is outside
 the measured datapath; backend behavior remains controlled rather than an independent
 variable. Optional runtime/language comparisons do not change the primary experiment.

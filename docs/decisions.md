@@ -159,7 +159,10 @@ A common CPU platform reduces architecture differences as a confounding variable
 
 ## D008 — Preferred DUT operating system
 
-**Status:** accepted
+**Status:** superseded
+
+Superseded by D031 (workloads) or D032 (DUT inventory/OS), as applicable.
+Historical rationale is retained below.
 
 ### Decision
 
@@ -229,7 +232,10 @@ Experimental fairness, efficient native code, WebAssembly/WASI portability, low 
 
 ## D013 — Network-function processing model
 
-**Status:** accepted
+**Status:** superseded
+
+Superseded by D031 (workloads) or D032 (DUT inventory/OS), as applicable.
+Historical rationale is retained below.
 
 ### Decision
 
@@ -285,7 +291,10 @@ Repeated, interleaved measurements limit variance and environmental drift; 30 is
 
 ## D017 — Baseline virtual firewall
 
-**Status:** accepted
+**Status:** superseded
+
+Superseded by D031 (workloads) or D032 (DUT inventory/OS), as applicable.
+Historical rationale is retained below.
 
 ### Decision
 
@@ -299,7 +308,10 @@ Simple filtering supports comparable measured workloads across environments.
 
 ## D018 — Baseline virtual load balancer
 
-**Status:** accepted
+**Status:** superseded
+
+Superseded by D031 (workloads) or D032 (DUT inventory/OS), as applicable.
+Historical rationale is retained below.
 
 ### Decision
 
@@ -411,7 +423,10 @@ Cloud virtualization, noisy neighbours, and limited CPU/network control can obsc
 
 ## D026 — Second DUT NIC
 
-**Status:** proposed
+**Status:** superseded
+
+Superseded by D031 (workloads) or D032 (DUT inventory/OS), as applicable.
+Historical rationale is retained below.
 
 ### Decision
 
@@ -479,11 +494,68 @@ A commit alone does not identify uncommitted source changes.
 
 ---
 
+## D031 — Layer 7 workload direction and implementation order
+
+**Status:** accepted
+
+### Decision
+
+On 2026-10-31 the user selected a Layer 7 firewall first, followed by a Layer 7
+load balancer. This replaces the L4 baseline in D013, D017, and D018. The three
+execution technologies, Rust reference language, and physical host roles remain accepted.
+The user's expectation that L7 will be easier is a planning assumption, not a finding.
+
+### Scope and open details
+
+A minimal HTTP request-filtering proxy and HTTP per-request round-robin load balancer
+are proposed interpretations. HTTP version, policy fields, rejection behavior, parser
+limits, backend protocol, connection reuse, and Wasmtime integration remain open.
+No production WAF, IDS/IPS, TLS termination, or broad body inspection is added.
+
+### Research impact
+
+The change retains RQ1–RQ7 but changes the measured workload to application-message
+processing. Parsing, proxying, connection handling, and backend work must be controlled
+and reported; conclusions cannot be generalized to raw-packet/L4 forwarding.
+This authorizes planning updates, not dependency installation or subsystem implementation.
+
+---
+
+## D032 — Reported DUT OS, NIC inventory, and existing homelab tooling
+
+**Status:** accepted
+
+### Decision and evidence
+
+On 2026-10-31 the user reported AlmaLinux 10.2 installed on the DUT and three NICs.
+Use the existing AlmaLinux installation as the current baseline instead of the Ubuntu
+preference in D008. D026's unknown second-NIC premise is superseded. These are user
+reports, not independently collected host facts. Exact release/kernel, NIC models,
+link speeds, active configuration, guest OS, and runtime compatibility remain unverified.
+
+### Existing tooling
+
+The sibling `../homelab` repository contains a Babashka `hl` CLI for power/SSH and
+`infra/ansible/playbooks/inspect.yml` for read-only host inspection. Its documentation
+states that it does not yet provision or reproduce the host configuration. Reuse this
+inspection workflow as appropriate; do not claim DUT provisioning is implemented.
+Record the homelab commit and relevant configuration provenance when used for research.
+Private inventory and diagnostic output must remain outside committed thesis documents.
+
+### Proposed topology and next gate
+
+Management / generator-facing ingress / backend-facing egress are proposed roles for
+the three NICs, subject to adapter, cabling, link-capacity, and routing verification.
+No NIC assignment or host configuration is performed by this decision. Resolve the
+minimal L7 behavior and common Wasmtime/native interface before implementation.
+
+---
+
 ## Remaining decisions
 
 D005 remains the optional Rust vs C/C++ vs TinyGo WebAssembly source-language proposal.
 Do not assign a second ID to the same proposal or promote optional work to core scope.
-D006–D016 preserve the topics previously reserved in this log; D017 onwards extend it.
+Historical D006–D016 preserve the topics previously reserved in this log; D017 onwards extend it.
 
 Unresolved details include networking/WASI target and APIs, software/guest versions,
 NIC topology, backend protocol/capacity, exact resource allocation, generators/collectors,

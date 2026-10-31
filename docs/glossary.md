@@ -107,12 +107,14 @@ The final measurement boundary must be precisely defined.
 
 ## vFW / vLB
 
-Virtual firewall / virtual load balancer. The thesis baselines are stateless Layer 4
-filtering and simple Layer 4 round-robin balancing, respectively.
+Virtual firewall / virtual load balancer. The current thesis direction is Layer 7,
+with the firewall implemented first and the load balancer second. HTTP filtering and
+per-request round-robin balancing remain proposals.
 
-## Layer 4 / socket-based networking
+## Layer 7 / application-layer networking
 
-The initial preferred transport-level interface for the workloads. Exact TCP/UDP,
+The current workload direction inspects application messages. HTTP is proposed; exact
+protocol semantics remain open. Underlying sockets still handle transport. Exact TCP/UDP,
 forwarding, and framing semantics remain to be defined; socket processing does not
 necessarily mean processing raw Ethernet frames. Stateless firewall policy is distinct
 from any transport connection state required by the implementation.

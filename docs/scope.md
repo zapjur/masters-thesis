@@ -12,8 +12,8 @@ The comparison is performed using selected network functions.
 
 The initial functions are:
 
-- stateless Layer 4 virtual firewall (`vFW`),
-- simple round-robin Layer 4 virtual load balancer (`vLB`).
+- Layer 7 virtual firewall (`vFW`),
+- Layer 7 virtual load balancer (`vLB`).
 
 ## Primary metrics
 
@@ -121,7 +121,7 @@ If the answer to question 4 is yes, the feature should generally remain optional
 
 The primary VNF language is Rust, sharing logic across Wasmtime WebAssembly and native
 x86_64 Docker Engine / QEMU/KVM/libvirt variants where feasible. All run on the same
-bare-metal x86 Linux DUT; Ubuntu Server 24.04 LTS is the preferred OS. Three physical
+bare-metal x86 Linux DUT; AlmaLinux 10.2 is the user-reported installed OS and current baseline. Three physical
 machines separate DUT, generation/orchestration, and backend roles.
 
 Clojure `mt` with EDN scenarios automates execution; Ansible configures hosts. Controlled
@@ -130,15 +130,17 @@ mode. Deterministic `delayed` and `cpu-light` modes are optional secondary scena
 AWS/EC2 may support development, CI, functional/reproducibility tests, or auxiliary
 experiments, but not the primary final measurements without a new justified decision.
 
-Layer 4 / socket-based networking is initially preferred. HTTP parsing/frameworks,
-raw Ethernet processing, DPDK, AF_XDP, and eBPF are not baseline requirements.
-The baseline excludes DPI, IDS/IPS, connection tracking, NAT, and complex firewall policy
-engines, as well as TLS termination, weighted routing, sticky sessions, complex health
-checks, and application-aware load balancing.
+Layer 7 workloads are the current direction, firewall first and load balancer second.
+A narrow HTTP workload is proposed; exact protocol and parsing interfaces remain open.
+Raw Ethernet processing, DPDK, AF_XDP, and eBPF are not baseline requirements.
+The baseline excludes IDS/IPS, NAT, complex firewall policy engines, TLS termination,
+weighted routing, sticky sessions, and complex health checks. Minimal application-layer
+inspection is now required; broad body inspection and production WAF features remain
+out of scope. Transport connection state must be distinguished from policy state.
 
 ## Provisional design values
 
-The second NIC, TRex, size/load sets, approximately 30 repetitions, precise resource
+NIC role assignment, TRex, size/load sets, approximately 30 repetitions, precise resource
 allocation, and statistical tests remain proposed. Consult [decisions.md](decisions.md).
 Optional source-language or runtime experiments must not delay the primary comparison.
 This planning stage creates documentation only, not subsystem boilerplate.
