@@ -2,8 +2,9 @@
 
 The first restricted HTTP/1.1 firewall is implemented in shared Rust using httparse
 1.10.1. Native Linux/musl and WASIp2/Wasmtime pass 47 wire cases each, with paired
-response parity verified on the i5-12400 DUT. Podman/Quadlet and VM parity remain
-future work. See [the evidence and reproduction](../../docs/firewall-correctness.md).
+response parity verified on the i5-12400 DUT. The Podman/Quadlet adapter now runs the
+same native artifact through the same cases; see [the container evidence](../../docs/podman-correctness.md).
+VM parity remains future work. See [the original evidence](../../docs/firewall-correctness.md).
 
 The functional contract is accepted under D038, implementing a subset of D035. See
 [the firewall contract](../../docs/l7-firewall.md) for method/path rules, default-deny
@@ -21,6 +22,7 @@ From `mt/`, after preparing the pinned tools:
 
 ```sh
 bb mt firewall check --ssh-host DUT_ALIAS --remote-root /tmp/mt-tcp-feasibility-clojure
+mt firewall check --with-podman --ssh-host DUT_ALIAS --remote-root /tmp/mt-tcp-feasibility-clojure
 ```
 
 The executable's positional arguments are:

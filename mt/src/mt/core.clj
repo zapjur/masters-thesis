@@ -99,6 +99,7 @@
        "Options:\n"
        "  --ssh-host ALIAS   Existing OpenSSH alias for the DUT\n"
        "  --remote-root DIR  Prepared DUT directory (default: /tmp/mt-tcp-feasibility)\n"
+       "  --with-podman      Include Podman/Quadlet in firewall check\n"
        "  -h, --help         Show this help\n"))
 
 (defn -main [& args]

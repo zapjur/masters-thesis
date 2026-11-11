@@ -8,6 +8,7 @@
                          (require 'mt.tcp-check-test)
                          (require 'mt.bootstrap-test)
                          (require 'mt.http-check-test)
-                         (let [result (clojure.test/run-tests 'mt.core-test 'mt.tcp-check-test 'mt.bootstrap-test 'mt.http-check-test)]
+                         (require 'mt.quadlet-test)
+                         (let [result (clojure.test/run-tests 'mt.core-test 'mt.tcp-check-test 'mt.bootstrap-test 'mt.http-check-test 'mt.quadlet-test)]
                            (when (pos? (+ (:fail result) (:error result)))
                              (System/exit 1))))}}}

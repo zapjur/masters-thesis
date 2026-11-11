@@ -1,7 +1,7 @@
 (ns mt.http-check
   "HTTP correctness fixtures on DUT loopback; no performance measurements."
   (:require [babashka.fs :as fs] [babashka.process :as process]
-            [clojure.string :as str] [mt.tcp-check :as tcp])
+            [clojure.string :as str] [mt.tcp-check :as tcp] [mt.quadlet :as quadlet])
   (:import [java.net Socket SocketException SocketTimeoutException]
            [java.io ByteArrayOutputStream]
            [java.security MessageDigest]
@@ -182,9 +182,10 @@
                            (= "yes" (get headers "x-keep"))) "Hop-by-hop request headers leaked"))))))
 
 (defn run-case! [command case output scenario]
-  (let [backend (start-backend (or (:mode case) :normal) scenario)
+  (let [execution (if (fn? command) (command case output scenario) {:argv command})
+        backend (start-backend (or (:mode case) :normal) scenario)
         port (with-open [listener (tcp/listener)] (.getLocalPort listener))
-        argv (into command (concat [(str "127.0.0.1:" port) (str "127.0.0.1:" (:port backend))
+        argv (into (:argv execution) (concat [(str "127.0.0.1:" port) (str "127.0.0.1:" (:port backend))
                                     (str (:io-timeout-ms scenario)) (str (:accept-timeout-ms scenario))
                                     (str (:max-head-bytes scenario)) (str (:max-headers scenario))
                                     (str (:max-body-bytes scenario)) (str (:max-connections scenario))] (:policy scenario)))
@@ -194,6 +195,7 @@
       (reset! proc (process/process argv {:out (fs/file output (str name ".stdout"))
                                          :err (fs/file output (str name ".stderr")) :shutdown process/destroy-tree}))
       (let [deadline (+ (System/nanoTime) (* 1000000000 (:process-timeout-seconds scenario)))
+            _ (when-let [await-start (:await-start execution)] (await-start @proc deadline))
             ready (response (exchange! @proc port deadline (request "/ready") scenario))
             denied (response (exchange! @proc port deadline (request "/blocked") scenario))]
         (tcp/check! (and (= 200 (:status ready)) (Arrays/equals ^bytes body ^bytes (:body ready))
@@ -225,6 +227,8 @@
           (when-not (.waitFor (:proc @proc) 1000 TimeUnit/MILLISECONDS)
             (.destroyForcibly (:proc @proc)) (.waitFor (:proc @proc))))
         (try (tcp/stop-backend! backend) (catch Exception e (swap! result assoc :status "failed" :cleanup_error (tcp/trace e))))
+        (when-let [cleanup (:cleanup execution)]
+          (try (cleanup) (catch Exception e (swap! result assoc :status "failed" :cleanup_error (tcp/trace e)))))
         (tcp/write-json! (fs/path output (str name ".backend.json")) @(:requests backend))
         (tcp/write-json! (fs/path output (str name ".json")) (assoc @result :finished_at (tcp/utc)))))
     @result))
@@ -236,7 +240,7 @@
                              {:started_at (tcp/utc) :scenario scenario :kind "functional-correctness"
                               :kernel (System/getProperty "os.version") :architecture (System/getProperty "os.arch")
                               :babashka (System/getProperty "babashka.version") :backend "Clojure/Babashka HTTP loopback fixture"}))
-        summary (atom {:status "failed" :cases []})]
+        summary (atom {:status "failed" :expected_case_count (* (count cases) (count (:variants scenario))) :cases []})]
     (try
       (let [lock (tcp/read-json (fs/path tools "lock.json"))
             compiler (str (fs/path tools "bin/rustc")) runtime (str (fs/path tools "bin/wasmtime"))
@@ -254,7 +258,9 @@
                :cpu_model (tcp/cpu-model "/proc/cpuinfo")
                :rustc (tcp/capture! [compiler "-vV"] (fs/path output "rustc-version.txt"))
                :wasmtime (tcp/capture! [runtime "--version"] (fs/path output "wasmtime-version.txt")))
-        (doseq [variant (:order scenario)]
+        (when (:container scenario)
+          (swap! metadata assoc :container_environment (quadlet/preflight! output (:container scenario))))
+        (doseq [variant (remove #{"podman"} (:order scenario))]
           (let [target (get lock (if (= variant "native") :native_target :wasm_target))
                 library (str (fs/path output (str "libhttparse-" variant ".rlib")))
                 binary (str (fs/path output (if (= variant "native") "firewall-native" "firewall.wasm")))
@@ -287,14 +293,31 @@
               (let [result (run-case! command case case-output scenario)]
                 (swap! summary update :cases conj (assoc result :variant variant))
                 (println (str variant ": " (:id case) ": " (:status result))) (flush)))))
-        (let [pairs (group-by :case (:cases @summary))]
+        (when (:container scenario)
+          (let [image (quadlet/prepare-image! work output (fs/path output "firewall-native") (:container scenario))
+                case-output (fs/path output "podman")]
+            (swap! metadata assoc :container_image image)
+            (tcp/check! (= (:binary_sha256 image) (get-in @metadata [:builds "native" :artifact_sha256]))
+                        "Container and native artifacts differ")
+            (try
+              (fs/create-dir case-output)
+              (doseq [case cases]
+                (let [result (run-case! (quadlet/command-factory work tools image (:container scenario)) case case-output scenario)]
+                  (swap! summary update :cases conj (assoc result :variant "podman"))
+                  (println (str "podman: " (:id case) ": " (:status result))) (flush)
+                  (tcp/check! (= "passed" (:status result))
+                              (str "Podman case failed; remaining container cases not run: " (:id case)))))
+              (swap! metadata assoc :container_recovery (quadlet/recovery-check! work tools image output scenario))
+              (finally
+                (tcp/capture! ["podman" "rmi" (:tag image)] (fs/path output "podman-image-cleanup.txt"))))))
+        (let [pairs (group-by :case (:cases @summary)) variants (set (:variants scenario))]
           (tcp/check! (= (count cases) (count pairs)) "Missing HTTP cases")
           (doseq [[name results] pairs]
-            (tcp/check! (and (= 2 (count results))
-                             (= #{"native" "wasm"} (set (map :variant results)))
+            (tcp/check! (and (= (count variants) (count results))
+                             (= variants (set (map :variant results)))
                              (every? #(= "passed" (:status %)) results)
                              (= 1 (count (set (map :response_sha256 results)))))
-                        (str "Native/WASIp2 response parity failed: " name))))
+                        (str "Firewall response parity failed: " name))))
         (swap! summary assoc :status "passed" :response_parity true))
       (catch Exception e (swap! summary assoc :error (tcp/trace e)))
       (finally

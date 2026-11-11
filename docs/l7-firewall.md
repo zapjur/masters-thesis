@@ -6,7 +6,8 @@ L7 firewall first and L7 load balancer second are accepted under D031. The user
 authorized proceeding with the staged work on 2026-10-31. The first HTTP/1.1 subset
 is now implemented and validated natively and through Wasmtime under D038; see
 [the correctness evidence](firewall-correctness.md). This does not finalize the
-measurement matrix, concurrency design, or container/VM parity. No performance
+measurement matrix or concurrency design. D039 adds scoped Podman/Quadlet parity;
+VM parity remains future work. No performance
 results have been collected.
 
 The first milestone is an HTTP filtering proxy with equivalent observable behavior
@@ -152,4 +153,5 @@ Basic DUT inspection and the bounded serial TCP spike succeeded; see
 final measurements: data-link topology/capacity, deployment versions, final concurrency,
 resource controls, container/VM network mode, and the benchmark matrix. The parser
 and functional HTTP subset are validated under D038. Temporary pinned tools support
-both correctness commands; no images or VMs have been created.
+the correctness commands. D039 now builds the native artifact into a scratch image
+for Podman/Quadlet checks; no VMs have been created.

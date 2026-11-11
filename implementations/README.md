@@ -3,8 +3,9 @@
 ## Accepted baseline; first HTTP firewall implemented
 
 The restricted HTTP/1.1 firewall passes native/WASIp2 correctness checks; see
-[the evidence](../docs/firewall-correctness.md). The load balancer and container/VM
-parity remain future work. The bounded TCP probe under
+[the evidence](../docs/firewall-correctness.md). Podman/Quadlet parity uses the same
+native executable; see [the container report](../docs/podman-correctness.md). The load
+balancer and VM parity remain future work. The bounded TCP probe under
 `feasibility/tcp-forwarder/` passes native/WASIp2 functional checks; see
 [the report](../docs/tcp-feasibility.md). It is not the final VNF or concurrency model.
 

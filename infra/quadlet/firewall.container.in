@@ -1,0 +1,22 @@
+[Unit]
+Description=mt firewall correctness {{name}}
+
+[Container]
+Image={{image}}
+ContainerName={{name}}
+Pull=never
+Network=host
+Exec={{exec}}
+ReadOnly=true
+DropCapability=all
+NoNewPrivileges=true
+PodmanArgs=--memory={{memory}} --pids-limit={{pids}}
+LogDriver=journald
+
+[Service]
+Restart=no
+TimeoutStartSec=30
+TimeoutStopSec=10
+CPUAccounting=yes
+MemoryAccounting=yes
+TasksAccounting=yes

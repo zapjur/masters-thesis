@@ -98,3 +98,12 @@ The earlier RPM query remains an accurate record of its inspection time.
 The subsequent Clojure rewrite (D037) additionally prepared static Babashka 1.12.218
 in `/tmp/mt-tcp-feasibility-clojure/tools`. Its bootstrap and test fixtures require
 no Python on the DUT; original temporary tools and historical attempts remain intact.
+
+## Subsequent Podman preparation (D039)
+
+The user installed Podman 5.8.2 (`podman-5.8.2-11.el10_2.alma.1.x86_64`) and its
+distribution dependencies for the authorized container milestone. Read-only follow-up
+verified rootless operation, crun 1.30.1, conmon 2.2.1, the systemd cgroup v2 manager,
+subordinate UID/GID ranges, and a running user-systemd session. Earlier absent-package
+queries remain historical facts. No lingering, boot autostart, or network change was
+made for this milestone. See [podman-correctness.md](podman-correctness.md).

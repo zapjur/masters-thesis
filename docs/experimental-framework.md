@@ -35,6 +35,9 @@ The commands above are intended interfaces, not available commands. The initial
 bounded development spike; see [tcp-feasibility.md](tcp-feasibility.md).
 The additional `bb mt firewall check --ssh-host ALIAS` command runs the first HTTP
 correctness suite; see [firewall-correctness.md](firewall-correctness.md).
+Its `--with-podman` option manages rootless Quadlet user services, verifies binary
+identity, and compares the same cases across native, WASIp2, and Podman. See
+[podman-correctness.md](podman-correctness.md); the general benchmark adapters remain future work.
 `doctor` checks prerequisites;
 `hosts` exposes availability/configuration; `deploy` builds/deploys artifacts; `run` executes
 scenarios; `status` reports lifecycle state; `results` locates artifacts; `analyze` integrates

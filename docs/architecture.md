@@ -67,6 +67,12 @@ or an equivalent build from the same source tree. Shared logic is intended where
 WASI/socket interfaces, target, dependencies, and networking adapters require validation.
 Neither source identity nor functional/network-path equivalence is assumed to be proven.
 
+The first HTTP subset now has native/WASIp2 correctness evidence (D038), and D039
+extends its loopback development checks to rootless Podman/Quadlet with host networking.
+The same native binary is copied into a scratch image and verified by hash. This
+does not prove VM parity or define the final data-network/concurrency design. See
+[podman-correctness.md](podman-correctness.md) for the scoped controls and evidence.
+
 ## Network path and hardware proposal
 
 ```text

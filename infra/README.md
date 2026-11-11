@@ -1,6 +1,6 @@
 # Infrastructure
 
-## Accepted plan; isolated feasibility preparation implemented
+## Accepted plan; isolated tools and Podman correctness preparation implemented
 
 The common bare-metal DUT is the i5-12400 x86 desktop (16 GB RAM, SSD), running Linux
 with verified AlmaLinux 10.2. It is intended to host Wasmtime, Podman with Quadlet,
@@ -23,6 +23,13 @@ Rust/Wasmtime/Babashka tools in a temporary DUT directory, with no sudo, system 
 VMs, or service/network configuration. See [mt instructions](../mt/README.md) and
 [the feasibility report](../docs/tcp-feasibility.md). Full host provisioning roles
 and thesis inventory are not implemented.
+
+`ansible/playbooks/prepare-podman.yml` installs the scoped Podman package with normal
+Ansible privilege escalation. The user installed the same selected package for the
+initial DUT checks. Application packaging is defined by `containers/firewall/Containerfile`,
+runtime controls by `containers/podman.lock.json`, and the user Quadlet template by
+`quadlet/firewall.container.in`. `mt firewall check --with-podman` manages the actual
+case lifecycle, independent of Ansible. See [podman-correctness.md](../docs/podman-correctness.md).
 
 ## Open configuration and hardware work
 

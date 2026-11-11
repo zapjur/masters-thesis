@@ -115,6 +115,7 @@ active readiness probes, controlled resources, and immutable raw results.
 
 - [TCP feasibility results](docs/tcp-feasibility.md): native/WASIp2 checks, tools, reproduction, and limits.
 - [HTTP firewall correctness](docs/firewall-correctness.md): implementation, 94 DUT checks, reproduction, and limits.
+- [Podman/Quadlet correctness](docs/podman-correctness.md): container controls, shared-binary checks, and three-variant parity.
 - [L7 firewall milestone](docs/l7-firewall.md): proposed behavior, correctness cases, and implementation gates.
 - [DUT inventory](docs/dut-inventory.md): verified hardware/software and remaining checks.
 - [Architecture](docs/architecture.md): machines, execution environments, and network path.
@@ -129,9 +130,10 @@ The TCP feasibility milestone is implemented: identical Rust source passes 12 fu
 cases per native/WASIp2 variant on the DUT through `mt feasibility tcp` (D036).
 The custom bootstrap and functional fixtures now use Clojure/Babashka (D037), with
 no Python required for direct preparation or test execution. Ansible is optional.
-The first HTTP/1.1 firewall now passes 47 correctness cases per native/WASIp2 variant,
-with byte-identical paired responses (D038). The full campaign framework and
-container/VM deployment remain unimplemented. Temporary tools are prepared through
+The first HTTP/1.1 firewall passes 47 correctness cases per native/WASIp2 variant
+(D038), and its opt-in Podman/Quadlet adapter runs the same cases with the identical
+native executable (D039). The full campaign framework and VM deployment remain
+unimplemented. Temporary tools are prepared through
 the Clojure bootstrap or its optional Ansible wrapper.
 Podman with Quadlet is the accepted container baseline (D033), and the verified
 i5-12400 is the accepted DUT (D034).

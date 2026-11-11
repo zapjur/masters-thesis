@@ -7,8 +7,13 @@
             [mt.core :as core])
   (:import [java.time Instant] [java.util UUID]))
 
+(defn options [args]
+  (when (> (count (filter #{"--with-podman"} args)) 1)
+    (throw (ex-info "--with-podman may appear only once" {})))
+  (assoc (core/options (remove #{"--with-podman"} args)) :podman? (boolean (some #{"--with-podman"} args))))
+
 (defn check! [args]
-  (let [{:keys [host root]} (core/options args)
+  (let [{:keys [host root podman?]} (options args)
         repo core/repo
         id (str "http-" (.toEpochMilli (Instant/now)) "-" (UUID/randomUUID))
         output (fs/path repo "experiments/local" id)
@@ -17,12 +22,17 @@
                       "implementations/firewall/Cargo.toml" "implementations/firewall/dependencies.lock.json"
                       "experiments/scenarios/firewall-correctness.edn" "infra/feasibility/toolchains.lock.json"
                       "infra/feasibility/bootstrap.clj" "mt/src/mt/core.clj" "mt/src/mt/firewall.clj"
-                      "mt/src/mt/http_check.clj" "mt/src/mt/tcp_check.clj" "mt/bb.edn"]
-        scenario (edn/read-string (slurp (str (fs/path repo "experiments/scenarios/firewall-correctness.edn"))))
+                      "mt/src/mt/http_check.clj" "mt/src/mt/tcp_check.clj" "mt/src/mt/quadlet.clj" "mt/bb.edn"
+                      "infra/containers/firewall/Containerfile" "infra/containers/podman.lock.json"
+                      "infra/quadlet/firewall.container.in" "infra/ansible/playbooks/prepare-podman.yml"]
+        base-scenario (edn/read-string (slurp (str (fs/path repo "experiments/scenarios/firewall-correctness.edn"))))
+        scenario (cond-> base-scenario
+                   podman? (assoc :variants [:native :wasm :podman] :order [:native :wasm :podman]
+                                  :container (json/parse-string (slurp (str (fs/path repo "infra/containers/podman.lock.json"))) true)))
         dependency (json/parse-string (slurp (str (fs/path repo "implementations/firewall/dependencies.lock.json"))) true)
         cache (fs/path repo ".cache/http")
         ssh ["ssh" "-o" "BatchMode=yes" "-o" "ConnectTimeout=10" host]]
-    (when-not (and (= (:order scenario) [:native :wasm]) (= (:variants scenario) [:native :wasm])
+    (when-not (and (= (:order base-scenario) [:native :wasm]) (= (:variants base-scenario) [:native :wasm])
                    (= (:kind scenario) :functional-correctness) (= (:concurrency scenario) :sequential)
                    (= (:max-connections scenario) 3) (= (:repetitions scenario) 1)
                    (every? pos-int? (map scenario [:io-timeout-ms :accept-timeout-ms :max-head-bytes
@@ -47,14 +57,19 @@
         (core/command! ["tar" "-xf" (str archive) "-C" (str extracted)])
         (fs/create-dirs (fs/path output "dependencies"))
         (fs/copy archive (fs/path output "dependencies" (fs/file-name archive)))
-        (core/command! (conj ssh (str "mkdir -p " root "/runs && mkdir " work " && mkdir " work "/mt")))
+        (core/command! (conj ssh (str "mkdir -p " root "/runs && mkdir " work " && mkdir " work "/mt " work "/deployment")))
         (core/command! ["scp" "-q" "-r" "-o" "BatchMode=yes"
                         (str (fs/path output "source/implementations/firewall")) (str host ":" work "/firewall")])
         (core/command! ["scp" "-q" "-r" "-o" "BatchMode=yes"
                         (str (fs/path extracted "httparse-1.10.1")) (str host ":" work "/httparse")])
         (core/command! ["scp" "-q" "-o" "BatchMode=yes"
                         (str (fs/path repo "mt/src/mt/http_check.clj")) (str (fs/path repo "mt/src/mt/tcp_check.clj"))
+                        (str (fs/path repo "mt/src/mt/quadlet.clj"))
                         (str host ":" work "/mt/")])
+        (core/command! ["scp" "-q" "-o" "BatchMode=yes"
+                        (str (fs/path repo "infra/containers/firewall/Containerfile"))
+                        (str (fs/path repo "infra/quadlet/firewall.container.in"))
+                        (str host ":" work "/deployment/")])
         (core/command! ["scp" "-q" "-o" "BatchMode=yes"
                         (str (fs/path repo "infra/feasibility/toolchains.lock.json"))
                         (str (fs/path output "scenario.json")) (str (fs/path output "provenance.json"))

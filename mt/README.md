@@ -2,7 +2,8 @@
 
 The Clojure experiment controller currently implements `feasibility tcp` and `firewall check`,
 using the existing controller Babashka (tested with 1.12.218). General `deploy`,
-`run`, metric collection, Podman/VM adapters, and analysis are not implemented yet.
+`run`, metric collection, VM adapters, and analysis are not implemented yet. The
+HTTP correctness command can optionally manage a rootless Podman/Quadlet variant.
 No additional Clojure dependencies or JVM installation are required. The DUT uses
 checksum-pinned Babashka 1.12.218 for the Clojure fixtures; no Python is required there.
 
@@ -93,6 +94,20 @@ variant with active readiness and explicit response parity. It retains the depen
 archive and all source/build/test evidence under a new `experiments/local/http-.../`
 directory. It requires no extra DUT package or network/service configuration.
 See [the report](../docs/firewall-correctness.md) for the contract and limitations.
+
+To include the installed Podman/Quadlet environment and compare all three variants:
+
+```sh
+mt firewall check --with-podman --ssh-host DUT_ALIAS \
+  --remote-root /tmp/mt-tcp-feasibility-clojure
+```
+
+Prepare Podman once using the scoped playbook documented in
+[the container report](../docs/podman-correctness.md). The suite builds a scratch
+image from the same native executable, manages temporary user Quadlets, runs the
+same 47 cases per variant, checks response parity, and verifies interruption cleanup.
+It exports the OCI image and retains unit/container metadata and logs. No sudo is
+used during cases; no boot autostart, lingering, or network/firewall change is added.
 
 ## Controller checks
 

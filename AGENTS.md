@@ -231,6 +231,16 @@ variant pass through `mt firewall check`, including active readiness and exact r
 parity. See docs/firewall-correctness.md. Its sequential connection model and loopback
 fixtures are functional controls, not the accepted final benchmark concurrency/topology.
 
+D039 adds opt-in rootless Podman/Quadlet correctness checks using host networking,
+the identical native executable in a scratch image, and temporary user units. Use
+`mt firewall check --with-podman`; see docs/podman-correctness.md and
+infra/containers/podman.lock.json. Resource guards are not final benchmark allocations.
+Cleanup must clear only run-owned services, containers, definitions, image tags, and
+failed-unit state; never prune unrelated resources or reset all user-systemd failures.
+The final D039 attempt passed 47 cases per native/WASIp2/Podman variant (141 total),
+with exact response parity and interruption recovery. VM parity and benchmark
+campaigns remain unimplemented.
+
 The user requests avoiding custom Python. Use Clojure/Babashka for controller,
 bootstrap, and functional fixtures; Rust remains the VNF/probe language (D037).
 Do not rewrite or delete historical raw artifacts that contain older Python snapshots.

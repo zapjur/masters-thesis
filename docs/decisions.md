@@ -798,6 +798,74 @@ not performance measurements.
 
 ---
 
+## D039 — Rootless Podman/Quadlet functional parity
+
+**Status:** accepted
+
+**Scope:** container correctness milestone only; final performance controls remain open.
+
+### Authorization and installed baseline
+
+The user authorized applying the Podman + Quadlet integration plan and installed
+the selected distribution package when sudo required an interactive password.
+Verified Podman 5.8.2, RPM podman-5.8.2-11.el10_2.alma.1.x86_64, crun 1.30.1,
+conmon 2.2.1, systemd cgroup v2, valid subordinate UID/GID ranges, and an active
+user-systemd manager. SELinux stays enforcing. No lingering or system service
+autostart is enabled; the orchestration SSH session keeps the user session active.
+The repository includes an optional scoped Ansible package-preparation playbook.
+
+### Container and network choices
+
+Use rootless user Quadlets and host networking for loopback functional parity.
+This shares the host network namespace and bypasses rootless pasta/bridge/port
+forwarding; it reduces network isolation and does not establish the final VM or
+physical data-network path. Do not infer that rootless defaults use this mode.
+
+Build a scratch image containing the exact native Rust executable from the same
+run, with no registry base image or package installation. Verify its bytes using
+podman cp from a non-running check container. Record content-addressed image ID,
+available manifest digest, native executable hash, and exported OCI archive hash.
+Run as container UID/GID 65532:65532, with read-only rootfs, all capabilities dropped,
+no-new-privileges, and no privileged operation. A 256 MiB memory and 64-PID guard
+are functional safety limits, not equivalent final benchmark allocations. No CPU
+affinity/quota is selected. Record and inspect actual container limits and cgroup
+placement; systemd accounting alone is not assumed to describe the payload.
+
+### Lifecycle and evidence
+
+mt firewall check --with-podman adds Podman to the identical native/WASIp2 case list.
+An mt child controls each generated user service; the parent recovers its owned
+unit/container if interrupted. Definitions use XDG_RUNTIME_DIR/containers/systemd,
+no Install section, Restart=no, Pull=never, and no auto-updates. Record the exact
+Quadlet, generated service, live container inspect, unit states, journal, and cleanup.
+Inspection synchronization is separate from actual allowed/denied readiness probes.
+Builds, image preparation/export, and unit generation are outside any measurement.
+The same client/backend fixtures, policy, and timing limits apply to every variant.
+
+Clean up only run-specific definitions, services, containers, and image tags, retaining
+raw artifacts and the OCI archive. Preserve failures; container checks fail fast after
+a failed case and record the expected count, completed cases, and that the remainder
+was not run.
+No performance campaign, VM deployment, or final resource/topology decision is added.
+
+### Primary references
+
+Consulted 2026-10-31: [Quadlet](https://docs.podman.io/en/stable/markdown/podman-systemd.unit.5.html)
+for rootless runtime paths and service generation; [Podman build](https://docs.podman.io/en/stable/markdown/podman-build.1.html)
+for scratch builds and timestamp control. Installed-package help/generated units and
+actual DUT checks verify version-specific behavior.
+
+### Observed evidence
+
+The final attempt passed 47 cases per variant (141 total) and exact response parity
+across native, WASIp2, and Podman. Binary identity, actual runtime limits, and forced
+controller-interruption recovery were verified. Cleanup additionally clears the
+owned unit's failed state and restores the initially healthy user manager. An earlier
+audit exposed a cached failed-unit entry; its original evidence remains unchanged.
+See [podman-correctness.md](podman-correctness.md) for exact attempts, hashes, and limits.
+
+---
+
 ## Remaining decisions
 
 D005 remains the optional Rust vs C/C++ vs TinyGo WebAssembly source-language proposal.

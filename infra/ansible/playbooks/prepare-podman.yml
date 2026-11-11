@@ -1,0 +1,23 @@
+---
+- name: Prepare the pinned Podman correctness environment
+  hosts: homelab
+  gather_facts: false
+  become: false
+  vars:
+    mt_podman_package: podman-5.8.2-11.el10_2.alma.1.x86_64
+  tasks:
+    - name: Install the explicitly selected Podman package and distro dependencies
+      become: true
+      ansible.builtin.dnf:
+        name: "{{ mt_podman_package }}"
+        state: present
+
+    - name: Check rootless Podman as the normal SSH user
+      ansible.builtin.command:
+        argv: [podman, info, --format, json]
+      changed_when: false
+
+    - name: Check the existing user-systemd manager
+      ansible.builtin.command:
+        argv: [systemctl, --user, is-system-running]
+      changed_when: false
