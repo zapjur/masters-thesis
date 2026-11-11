@@ -1,0 +1,33 @@
+---
+- name: Prepare isolated TCP feasibility tools without system package changes
+  hosts: homelab
+  gather_facts: false
+  become: false
+  vars:
+    mt_probe_root: /tmp/mt-tcp-feasibility
+    mt_controller_cache: "{{ playbook_dir }}/../../../.cache/feasibility"
+  tasks:
+    # All DUT operations use OpenSSH from the Clojure controller.
+    # Ansible's Python runs on the controller only, not on the DUT.
+    - name: Prepare pinned portable tools through the Clojure controller
+      delegate_to: localhost
+      vars:
+        ansible_python_interpreter: "{{ ansible_playbook_python }}"
+      ansible.builtin.command:
+        argv:
+          - bb
+          - "{{ playbook_dir }}/../../feasibility/bootstrap.clj"
+          - --ssh-host
+          - "{{ hostvars[inventory_hostname].ansible_host | default(inventory_hostname) }}"
+          - --root
+          - "{{ mt_probe_root }}"
+          - --lock
+          - "{{ playbook_dir }}/../../feasibility/toolchains.lock.json"
+          - --cache
+          - "{{ mt_controller_cache }}"
+      register: mt_bootstrap
+      changed_when: "'installed artifact=' in mt_bootstrap.stdout"
+
+    - name: Report pinned versions
+      ansible.builtin.debug:
+        var: mt_bootstrap.stdout_lines

@@ -37,6 +37,10 @@ target/
 # Go
 bin/
 
+# Version the mt CLI launcher.
+!mt/bin/
+!mt/bin/mt
+
 # Build outputs
 build/
 dist/

@@ -10,7 +10,7 @@ and resistant to measurement bias. H1–H3 are defined in [research.md](research
 
 ## Fairness and experimental controls
 
-Use the same x86 Linux DUT for Wasmtime, Docker Engine, and QEMU/KVM/libvirt. Use Rust
+Use the same x86 Linux DUT for Wasmtime, Podman, and QEMU/KVM/libvirt. Use Rust
 with as much shared VNF logic as technically feasible. Validate equivalent behavior before
 performance experiments; document unavoidable build, API, and networking differences.
 The reference workloads are now L7 vFW followed by L7 vLB (D031). HTTP request filtering
@@ -24,7 +24,7 @@ traffic definition to each technology, with equivalent resources, benchmark dura
 and backend behavior. The main vLB benchmark uses the `minimal` backend. Other backend
 modes are secondary scenarios. Verify generator/backend headroom and report bottlenecks.
 
-Attempt equivalent compute allocation using process CPU affinity for Wasmtime, Docker
+Attempt equivalent compute allocation using process CPU affinity for Wasmtime, Podman
 cpuset/affinity and explicit memory controls, and pinned VM vCPUs with explicit memory
 assignment. Exact CPU IDs, core/vCPU counts, limits, and host CPU reservations remain
 proposed. Distinguish allocated resources from actual consumption; document host/kernel/
@@ -43,7 +43,7 @@ starting proposal, not a statistical requirement. Pilot variance, confidence goa
 effect sizes, and execution cost determine the final count.
 
 Support randomized ordering, preferably randomized/interleaved blocks across technologies
-within each scenario. Do not run all Wasm repetitions, then all Docker, then all VM
+within each scenario. Do not run all Wasm repetitions, then all Podman, then all VM
 repetitions in a fixed sequence. Record the realized order and any randomization seed
 for reproducibility. Reset state and account for carry-over between iterations.
 

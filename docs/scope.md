@@ -120,8 +120,8 @@ If the answer to question 4 is yes, the feature should generally remain optional
 ## Accepted execution and automation scope
 
 The primary VNF language is Rust, sharing logic across Wasmtime WebAssembly and native
-x86_64 Docker Engine / QEMU/KVM/libvirt variants where feasible. All run on the same
-bare-metal x86 Linux DUT; AlmaLinux 10.2 is the user-reported installed OS and current baseline. Three physical
+x86_64 Podman / QEMU/KVM/libvirt variants where feasible. All run on the same
+bare-metal x86 Linux DUT; AlmaLinux 10.2 is the verified installed OS and current baseline. Three physical
 machines separate DUT, generation/orchestration, and backend roles.
 
 Clojure `mt` with EDN scenarios automates execution; Ansible configures hosts. Controlled
@@ -131,7 +131,8 @@ AWS/EC2 may support development, CI, functional/reproducibility tests, or auxili
 experiments, but not the primary final measurements without a new justified decision.
 
 Layer 7 workloads are the current direction, firewall first and load balancer second.
-A narrow HTTP workload is proposed; exact protocol and parsing interfaces remain open.
+A narrow HTTP/1.1 subset is implemented for the first firewall correctness milestone
+(D038). The final concurrency model, deployment paths, and benchmark matrix remain open.
 Raw Ethernet processing, DPDK, AF_XDP, and eBPF are not baseline requirements.
 The baseline excludes IDS/IPS, NAT, complex firewall policy engines, TLS termination,
 weighted routing, sticky sessions, and complex health checks. Minimal application-layer
@@ -143,4 +144,5 @@ out of scope. Transport connection state must be distinguished from policy state
 NIC role assignment, TRex, size/load sets, approximately 30 repetitions, precise resource
 allocation, and statistical tests remain proposed. Consult [decisions.md](decisions.md).
 Optional source-language or runtime experiments must not delay the primary comparison.
-This planning stage creates documentation only, not subsystem boilerplate.
+The user authorized the staged L7 firewall plan; inventory/specification and networking
+feasibility precede substantial implementation. See [l7-firewall.md](l7-firewall.md).

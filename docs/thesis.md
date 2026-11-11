@@ -115,7 +115,7 @@ an assumed result.
 ## Implementation plan
 
 The main experiment evaluates both network performance and execution-environment/resource
-cost. Shared Rust logic will target WebAssembly/Wasmtime and native x86_64 for Docker
+cost. Shared Rust logic will target WebAssembly/Wasmtime and native x86_64 for Podman
 Engine and QEMU/KVM/libvirt Linux guests. All variants run on the same bare-metal x86
 DUT, with separate generator/orchestrator and backend machines.
 

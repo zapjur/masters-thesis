@@ -162,7 +162,7 @@ results?
 
 ## Accepted experimental context
 
-The baseline compares Rust vFW/vLB logic through Wasmtime, Docker Engine, and
+The baseline compares Rust vFW/vLB logic through Wasmtime, Podman, and
 QEMU/KVM/libvirt on one x86 Linux DUT. The current direction is Layer 7,
 with a firewall first and load balancer second. Exact application semantics remain open. Separate physical machines
 provide identical traffic profiles and minimal backends. Clojure orchestration is outside

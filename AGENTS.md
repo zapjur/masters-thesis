@@ -183,16 +183,19 @@ Avoid calling WebAssembly itself a virtual machine unless discussing a specific 
   x86_64 builds where technically feasible. Rust is selected for fairness, portability,
   low runtime overhead, and mature tooling, not universal language performance superiority.
 - Wasmtime is the baseline WebAssembly runtime.
-- Docker Engine on Linux runs the native Rust VNF.
+- Podman with Quadlet on Linux runs the native Rust VNF (D033); `mt` controls
+  generated systemd services and performs active readiness probes.
 - QEMU/KVM/libvirt with a Linux guest and virtio networking runs the same native executable
   or an equivalent build from the same source tree.
 - All three technologies are benchmarked on the same bare-metal x86 DUT: Intel Core
-  i7-6700K, 16 GB RAM, SSD. AlmaLinux 10.2 is the user-reported installed DUT OS and current baseline;
-  kernel/package versions still need verification. The user reports three NICs.
+  i5-12400, 16 GB RAM, SSD. AlmaLinux 10.2 and the i5-12400 hardware are verified and accepted (D034).
+  Three RTL8125 NICs are verified; data-link topology remains unresolved.
+  See docs/dut-inventory.md for observed kernel, link speeds, and software state.
 - MacBook M4 Max generates traffic, runs the orchestrator, and collects final artifacts.
   MacBook M1 Pro runs backends/receivers. Neither Mac is a primary DUT.
 - Layer 7 is the current workload direction: firewall first, then load balancer.
-  Exact application protocol and Wasmtime interfaces remain open; HTTP is proposed.
+  The first HTTP/1.1 firewall subset uses shared Rust/httparse and WASIp2 sockets
+  (D038). Final concurrency, deployment paths, and benchmark settings remain open.
 - Clojure is used for `mt` (master-thesis); EDN defines experiment scenarios.
 - Ansible configures/provisions hosts. `mt deploy` deploys applications/artifacts;
   `mt run` manages experiment lifecycles. Ansible is not the per-benchmark engine.
@@ -209,16 +212,41 @@ VM/environment overhead where appropriate, rather than only guest VNF process RS
 
 NIC role assignment, TRex, exact packet/payload sizes and load levels, approximately 30
 repetitions, exact CPU/memory allocations, statistical tests, and a clean-working-tree
-check remain proposals. The user reports three DUT NICs; models, link speeds, and cabling remain unverified. Wasmtime vs WasmEdge and
+check remain proposals. Three RTL8125 DUT NICs are verified; data-link capacity and
+cabling remain unresolved. Wasmtime vs WasmEdge and
 Rust vs C/C++ vs TinyGo are optional secondary experiments, not core requirements.
 Do not infer acceptance from illustrative configuration examples.
 
 ## Current project state
 
-Documentation and planning only. No VNF, backend, `mt`, Ansible, or infrastructure
-implementation has been authorized by this planning update.
+The user authorized proceeding with the staged L7 firewall plan. The first milestone
+is specification and verified inventory, then Wasmtime/native networking feasibility.
+Podman with Quadlet replaces Docker; do not add a second container comparison.
+The bounded TCP spike is now implemented and passed 12 cases per native/WASIp2
+variant through `mt feasibility tcp`. Temporary tools are scoped under D036.
+See docs/l7-firewall.md, docs/dut-inventory.md, docs/tcp-feasibility.md, and D033–D036.
 
-Before implementation is requested, resolve networking feasibility, remaining architecture
+The first HTTP/1.1 firewall is implemented under D038: 47 wire cases per native/WASIp2
+variant pass through `mt firewall check`, including active readiness and exact response
+parity. See docs/firewall-correctness.md. Its sequential connection model and loopback
+fixtures are functional controls, not the accepted final benchmark concurrency/topology.
+
+D039 adds opt-in rootless Podman/Quadlet correctness checks using host networking,
+the identical native executable in a scratch image, and temporary user units. Use
+`mt firewall check --with-podman`; see docs/podman-correctness.md and
+infra/containers/podman.lock.json. Resource guards are not final benchmark allocations.
+Cleanup must clear only run-owned services, containers, definitions, image tags, and
+failed-unit state; never prune unrelated resources or reset all user-systemd failures.
+The final D039 attempt passed 47 cases per native/WASIp2/Podman variant (141 total),
+with exact response parity and interruption recovery. VM parity and benchmark
+campaigns remain unimplemented.
+
+The user requests avoiding custom Python. Use Clojure/Babashka for controller,
+bootstrap, and functional fixtures; Rust remains the VNF/probe language (D037).
+Do not rewrite or delete historical raw artifacts that contain older Python snapshots.
+Ansible remains an optional infrastructure wrapper, with its normal controller runtime.
+
+Before substantial implementation, resolve networking feasibility, remaining architecture
 and methodology questions, and version/resource controls in the relevant documents.
 Do not install dependencies, configure hosts, build images, create VMs, or run benchmarks
 as part of a documentation-only task.

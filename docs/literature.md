@@ -439,7 +439,9 @@ Related work and cautious hypothesis formulation, especially RQ7.
 
 #### Relevance
 
-Direct background for the accepted Docker/KVM comparison on a common Linux host.
+Background for container/KVM comparison on a common Linux host. This source studies
+Docker; the current thesis container baseline is Podman with Quadlet (D033), so do not
+transfer Docker-specific behavior or results without checking applicability.
 
 #### Key findings
 
@@ -718,7 +720,7 @@ The following are interpretations of this review, not experimental results or de
 | RQ7: workload dependence | L01, L05–L06, T06 | Keep vFW/vLB separate; document runtime/API differences and limit generalization to tested workloads. |
 
 **Working gap:** the reviewed evidence does not establish the outcome of the accepted
-same-source Rust vFW/vLB comparison under Wasmtime, Docker, and QEMU/KVM on the same
+same-source Rust vFW/vLB comparison under Wasmtime, Podman, and QEMU/KVM on the same
 x86 Linux DUT with common traffic and resource accounting. This motivates the experiment;
 it is not a claim that no prior equivalent study exists. H1–H3 remain falsifiable.
 

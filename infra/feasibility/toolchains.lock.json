@@ -1,0 +1,32 @@
+{
+  "wasmtime_version" : "50.0.1",
+  "babashka_release" : "https://github.com/babashka/babashka/releases/tag/v1.12.218",
+  "rust_manifest" : "https://static.rust-lang.org/dist/2026-10-15/channel-rust-stable.toml",
+  "wasm_target" : "wasm32-wasip2",
+  "rust_version" : "1.99.1",
+  "babashka_version" : "1.12.218",
+  "verified_on" : "2026-10-31",
+  "native_target" : "x86_64-unknown-linux-musl",
+  "wasmtime_release" : "https://github.com/bytecodealliance/wasmtime/releases/tag/v50.0.1",
+  "artifacts" : [ {
+    "name" : "rustc-x86_64-unknown-linux-gnu",
+    "url" : "https://static.rust-lang.org/dist/2026-10-15/rustc-1.99.1-x86_64-unknown-linux-gnu.tar.xz",
+    "sha256" : "2ff05ff9c08a90861e7f6e4065b40a8b87463b4576186fd613871c3e37f2091f"
+  }, {
+    "name" : "rust-std-x86_64-unknown-linux-musl",
+    "url" : "https://static.rust-lang.org/dist/2026-10-15/rust-std-1.99.1-x86_64-unknown-linux-musl.tar.xz",
+    "sha256" : "1dd241eaeb19ff3b5180461c77bdee93d6cafc669eda9de834e7c06b0ec3ca95"
+  }, {
+    "name" : "rust-std-wasm32-wasip2",
+    "url" : "https://static.rust-lang.org/dist/2026-10-15/rust-std-1.99.1-wasm32-wasip2.tar.xz",
+    "sha256" : "15d54cff9ce112ab273cf7e214600108754d51100ce7d6bd62a354f16c93b4f3"
+  }, {
+    "name" : "wasmtime",
+    "url" : "https://github.com/bytecodealliance/wasmtime/releases/download/v50.0.1/wasmtime-v50.0.1-x86_64-linux.tar.xz",
+    "sha256" : "685466455dd42a14774a86c36c8f2e45cbb9bd6d92a850139315df60a75498a5"
+  }, {
+    "name" : "babashka",
+    "url" : "https://github.com/babashka/babashka/releases/download/v1.12.218/babashka-1.12.218-linux-amd64-static.tar.gz",
+    "sha256" : "7bd028cc794732ffde3da31ce4379840893c8e54f1046f92a8dfc4f4b3cddaf8"
+  } ]
+}

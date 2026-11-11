@@ -77,7 +77,8 @@ The primary network functions will be:
 They provide two useful and understandable network-processing workloads while remaining
 small enough to implement experimentally.
 
-The baseline behavior is refined by D017 and D018. Transport/interface details remain open.
+The current L7 direction is defined by D031; historical L4 decisions D017 and D018
+are superseded. The detailed firewall contract is proposed in D035.
 
 ---
 
@@ -131,7 +132,9 @@ containers, and virtual machines.
 
 ## D006 — Benchmark host and physical roles
 
-**Status:** accepted
+**Status:** superseded
+
+Superseded by D034, which corrects the DUT hardware and preserves the host roles.
 
 ### Decision
 
@@ -190,7 +193,9 @@ One baseline runtime keeps the primary comparison manageable; optional runtime c
 
 ## D010 — Baseline container environment
 
-**Status:** accepted
+**Status:** superseded
+
+Superseded by D033. Historical Docker baseline retained below.
 
 ### Decision
 
@@ -357,7 +362,8 @@ Separate machine, application, and experiment lifecycles avoid provisioning work
 
 ### Decision
 
-Clojure is the planned backend language on the M1 Pro. Design one configurable service; minimal mode is the primary vLB benchmark. Deterministic delayed and cpu-light modes are optional secondary scenarios. vFW may use a simpler TCP/UDP receiver.
+Clojure is the planned backend language on the M1 Pro. Design one configurable service; minimal mode is the primary vLB benchmark. Deterministic delayed and cpu-light modes are optional secondary scenarios. For the L7 firewall (D031), the receiver must support the selected application
+protocol; the earlier TCP/UDP-only receiver sketch is insufficient for HTTP correctness.
 
 ### Rationale
 
@@ -371,7 +377,7 @@ Backend language is not the independent variable; deterministic behavior and suf
 
 ### Decision
 
-Apply the same resolved traffic definition to Wasmtime, Docker, and VM variants. Separate traffic profiles from environment adapters and automate complete experiment execution with mt.
+Apply the same resolved traffic definition to Wasmtime, the selected container, and VM variants. Separate traffic profiles from environment adapters and automate complete experiment execution with mt.
 
 ### Rationale
 
@@ -517,7 +523,9 @@ No production WAF, IDS/IPS, TLS termination, or broad body inspection is added.
 The change retains RQ1–RQ7 but changes the measured workload to application-message
 processing. Parsing, proxying, connection handling, and backend work must be controlled
 and reported; conclusions cannot be generalized to raw-packet/L4 forwarding.
-This authorizes planning updates, not dependency installation or subsystem implementation.
+At the time this direction was selected, it authorized planning updates only. The
+user subsequently authorized proceeding with the staged firewall plan; prerequisite
+feasibility and design work precedes substantial implementation (see D035).
 
 ---
 
@@ -548,6 +556,313 @@ Management / generator-facing ingress / backend-facing egress are proposed roles
 the three NICs, subject to adapter, cabling, link-capacity, and routing verification.
 No NIC assignment or host configuration is performed by this decision. Resolve the
 minimal L7 behavior and common Wasmtime/native interface before implementation.
+
+---
+
+## D033 — Podman with Quadlet as the container baseline
+
+**Status:** accepted
+
+### Decision
+
+On 2026-10-31 the user explicitly selected Podman with Quadlet to replace Docker
+Engine (D010). Podman runs the native Rust VNF; Quadlet generates its systemd service.
+This replaces the container implementation choice, not the three-technology comparison.
+No additional Docker-versus-Podman experiment is introduced.
+
+### Lifecycle and experimental controls
+
+Ansible provides host prerequisites, `mt deploy` stages artifacts/definitions, and
+`mt run` controls the generated service and probes functional readiness. systemd
+active/notify state is not the definition of VNF readiness. Pre-stage images and
+unit generation outside prepared-environment startup measurements.
+
+Rootful/rootless execution, network mode, exact Podman/OCI runtime versions, resource
+limits, and startup boundaries remain open. Explicitly account for network helpers,
+conmon, cgroups, and relevant total environment overhead. Proposed experimental units
+have no automatic restart, boot autostart, or auto-update. Validate container cgroup
+limits rather than assuming service-wrapper limits are sufficient.
+
+### Verified sources
+
+Consulted 2026-10-31: [Quadlet documentation](https://docs.podman.io/en/stable/markdown/podman-systemd.unit.5.html)
+for systemd integration and cgroup v2 requirements; [Podman performance guide](https://github.com/podman-container-tools/podman/blob/main/docs/tutorials/performance.md)
+for rootless networking considerations. Neither source proves performance on this DUT.
+
+---
+
+## D034 — Verified i5-12400 DUT and corrected hardware baseline
+
+**Status:** accepted
+
+### Decision and evidence
+
+On 2026-10-31 read-only homelab inspection reported Intel Core i5-12400, x86_64,
+six cores/twelve logical CPUs, 15415 MiB OS-visible RAM, AlmaLinux 10.2, and kernel
+`6.12.0-211.68.1.el10_2.x86_64`. The user confirmed this machine is the intended DUT.
+This replaces D006's i7-6700K inventory. The DUT remains common to all technologies;
+M4 Max and M1 Pro roles remain unchanged. RAM is nominally 16 GB; OS-visible memory
+is recorded separately. Observed storage includes NVMe and a separate SATA device.
+
+Three PCI Ethernet controllers are Realtek RTL8125 2.5GbE, using `r8169`. At inspection,
+`eno1` had carrier and a reported 100 Mb/s link; `enp3s0` and `enp4s0` had no carrier.
+Controller capability is not achieved link speed. cgroup v2 is mounted; SELinux is
+enforcing and firewalld is running. Do not silently disable either for experiments.
+
+See [dut-inventory.md](dut-inventory.md) for provenance, package-query limitations,
+and remaining checks. Management/ingress/egress roles and experimental link capacity
+remain unverified; this decision makes no network changes.
+
+---
+
+## D035 — First L7 firewall contract and feasibility gate
+
+**Status:** proposed
+
+**Update:** D038 accepts and implements the narrowed first HTTP functional subset;
+this broader proposal does not select final concurrency or benchmark settings.
+
+### Proposal
+
+Use the restricted HTTP/1.1 filtering-proxy contract in [l7-firewall.md](l7-firewall.md):
+method/path rules, first-match semantics, default deny, explicit blocked response,
+no request bodies or TLS, and one request per connection in the first functional
+milestone. Parser/size/deadline details are specified there as proposals, not final
+benchmark values. This is an application-layer research workload, not a production WAF.
+
+### Work authorization and gate
+
+The user authorized proceeding with the staged plan on 2026-10-31. First deliverables
+are the firewall specification and verified inventory, followed by Wasmtime/socket
+feasibility. Prefer validating a Rust WASIp2 command component with sockets so HTTP
+parsing remains in the shared VNF. A WASI HTTP host would shift work out of the guest
+and requires an explicit fairness decision. Exact versions, dependencies, concurrency,
+resource controls, and network paths must be resolved before substantial implementation.
+
+Functional tests must verify backend non-observation for rejected requests, correct
+forwarding, framing/error behavior, deadlines, and equivalent behavior across all three
+variants. A serial correctness spike does not establish the final concurrency design.
+No performance campaign is authorized to substitute for these feasibility checks.
+
+---
+
+## D036 — Bounded TCP feasibility probe and isolated toolchain
+
+**Status:** accepted
+
+**Scope:** feasibility milestone only
+
+**Update:** D037 replaces the original Python fixtures and preparation scripts with
+Clojure/Babashka. The Rust probe and remaining feasibility controls remain applicable.
+
+### Decision and authorization
+
+On 2026-10-31 the user authorized implementing and running the native/Wasmtime TCP
+spike described in the work plan. Implement a dependency-free, serial Rust probe
+and automate its functional checks through an initial Clojure `mt` command, using
+controller Babashka 1.12.218. This does not select the complete framework runtime,
+HTTP parser, final concurrency model, or final benchmark configuration.
+
+Pin Rust 1.99.1 and Wasmtime 50.0.1 for the spike. Verify downloaded archives against
+SHA-256 values from the official dated Rust manifest and Wasmtime release metadata.
+Prepare these tools through an Ansible playbook in `/tmp/mt-tcp-feasibility`, with
+no sudo or system package changes. Use Rust's bundled linker and a self-contained
+`x86_64-unknown-linux-musl` native target because the DUT lacks a C compiler and
+its development packages. This does not select the final native VNF libc/target.
+The other target is `wasm32-wasip2`, executed as a command component with socket access.
+
+### Controls and temporary development differences
+
+The probe exchanges one bounded length-prefixed frame through a backend, with
+explicit accept/exchange deadlines. Both targets compile identical source. Check
+pending socket errors and peer state after connect in the shared code. No WASI HTTP
+host processes the application protocol. The scenario, exact versions, build flags,
+source/artifact hashes, Git commit and dirty status, failures, and case order are retained.
+
+Python standard-library client/backend fixtures run on DUT loopback for this functional
+check only. They are test tooling, not additional VNF language variants or final backend
+services. Final generator/backend physical roles and Clojure backend plans remain
+unchanged. `mt` collects successful and failed evidence into unique, non-overwritten
+attempt directories. No final benchmark, CPU allocation, or network mode is selected.
+
+### Evidence and limitations
+
+The complete final command passed 12 cases per variant. The first failed TCP attempt
+and a subsequent controller-reporting failure remain retained. See
+[tcp-feasibility.md](tcp-feasibility.md) for the exact attempts, source provenance,
+reproduction, observed connection-refusal difference, and untested paths. Functional
+success establishes socket feasibility for this serial probe; it does not establish
+HTTP equivalence, container/VM parity, concurrency, or any performance advantage.
+
+---
+
+## D037 — Clojure/Babashka preparation and functional fixtures
+
+**Status:** accepted
+
+### Decision and authorization
+
+The user explicitly requested avoiding Python and rewriting the custom scripts.
+Replace the original Python bootstrap and fixtures with Clojure/Babashka. Rust remains
+the only VNF/probe language; this does not introduce a language-comparison experiment.
+The Clojure client/backend fixtures now live under `mt/src/mt/tcp_check.clj`, and
+`infra/feasibility/bootstrap.clj` prepares tools from the controller.
+
+### Preparation and execution
+
+Checksum-pin the DUT's static Babashka 1.12.218 archive alongside the existing Rust
+1.99.1 and Wasmtime 50.0.1 artifacts. The controller uses curl/tar to download, verify,
+and extract archives, then OpenSSH to stage/install tools in a temporary DUT directory.
+This avoids Python and archive-extraction dependencies on the DUT. The same Clojure
+preparation command runs directly, without Ansible. The optional Ansible playbook
+delegates to this controller command and still uses Ansible's normal Python runtime
+on the controller; it executes no Python modules on the DUT.
+
+Retain the same bounded frame protocol, checks, source provenance, timeouts, unique
+attempt IDs, and partial-result collection. Do not delete or alter earlier evidence
+or source snapshots merely because they contain the former Python scripts.
+
+### Evidence
+
+A fresh `/tmp/mt-tcp-feasibility-clojure` directory was prepared using the rewritten
+bootstrap. All twelve cases passed for each Rust target through the Clojure fixtures.
+Nine local tests with 24 assertions passed. The Ansible wrapper was also exercised
+against the prepared directory with `changed=0`, confirming its delegation path.
+Migration failures and the successful new attempt are documented in
+[tcp-feasibility.md](tcp-feasibility.md), separately from the original Python-runner
+attempts. No performance results or final benchmark configuration are implied.
+
+---
+
+## D038 — First shared HTTP firewall and parser
+
+**Status:** accepted
+
+**Scope:** functional correctness milestone; final benchmarking configuration remains open.
+
+### Decision and authorization
+
+The user authorized proceeding with parser validation and the first method/path firewall.
+Select checksum-pinned httparse 1.10.1 with default features disabled, keeping its
+portable non-SIMD parser path on both native Linux/musl and WASIp2. Its registry
+checksum and exact archive URL are recorded in implementations/firewall/dependencies.lock.json.
+Compile the parser directly with pinned rustc; no Cargo build scripts, C compiler,
+or additional async dependencies are required. The crate archive, licenses, sources,
+build commands, artifact hashes, and resolved scenario are retained per attempt.
+
+### Shared I/O model and protocol
+
+Use the proven blocking std::net path with a single thread and sequential connections
+for this first correctness milestone. This implements a common model without claiming
+concurrency/scaling feasibility. Tokio socket support on WASI currently requires
+tokio_unstable; adopting it and the final concurrency model remain open.
+
+Implement the D035 HTTP/1.1 subset: exact raw method/path, ordered first-match rules,
+default deny, 403 for policy rejection, 400 for malformed/unsupported requests,
+431 for request head limits, and 502 for backend errors. No request bodies, TLS,
+HEAD, CONNECT, Upgrade, Expect, or chunked transfers. Require one valid Host, reject
+duplicate Content-Length even when equal, rewrite Host to the configured fixed
+backend, and remove hop-by-hop and Connection-named headers. The backend contract
+is bounded HTTP/1.1 200 with one Content-Length. Buffer its complete bounded body
+before committing a successful client response.
+
+One request is processed per connection; trailing/pipelined bytes are discarded
+when it closes, never forwarded or treated as another request. This avoids making
+behavior depend on TCP segmentation. An exchange deadline covers request reading
+and backend forwarding. Local rejection/backend error replies have a separate
+budget capped at 250 ms to allow bounded error reporting after expiration.
+All limits and policy are explicit command arguments/resolved EDN fields.
+
+### Verification and boundaries
+
+Run identical wire cases under mt firewall check, including active allowed/denied
+readiness probes and backend non-observation assertions. Fixtures stay on DUT loopback
+for development, using Clojure/Babashka. No Podman/VM deployment or performance
+campaign is added. The larger D035 proposal and final topology/resources/scaling
+remain open beyond this functional subset.
+
+### Primary sources
+
+Consulted 2026-10-31: [httparse 1.10.1](https://docs.rs/httparse/1.10.1/httparse/),
+[registry index](https://index.crates.io/ht/tp/httparse), and
+[Tokio WASI support](https://docs.rs/tokio/latest/tokio/). These describe candidate
+interfaces; actual compatibility must be demonstrated by the retained DUT results.
+
+### Observed implementation evidence
+
+The final HTTP attempt passed 47 cases per variant (94 total), with exact client
+response parity and five native Rust unit tests. The first compile failure and the
+earlier 46-case attempt remain retained. See [firewall-correctness.md](firewall-correctness.md)
+for source provenance, limitations, and reproduction. These are functional results,
+not performance measurements.
+
+---
+
+## D039 — Rootless Podman/Quadlet functional parity
+
+**Status:** accepted
+
+**Scope:** container correctness milestone only; final performance controls remain open.
+
+### Authorization and installed baseline
+
+The user authorized applying the Podman + Quadlet integration plan and installed
+the selected distribution package when sudo required an interactive password.
+Verified Podman 5.8.2, RPM podman-5.8.2-11.el10_2.alma.1.x86_64, crun 1.30.1,
+conmon 2.2.1, systemd cgroup v2, valid subordinate UID/GID ranges, and an active
+user-systemd manager. SELinux stays enforcing. No lingering or system service
+autostart is enabled; the orchestration SSH session keeps the user session active.
+The repository includes an optional scoped Ansible package-preparation playbook.
+
+### Container and network choices
+
+Use rootless user Quadlets and host networking for loopback functional parity.
+This shares the host network namespace and bypasses rootless pasta/bridge/port
+forwarding; it reduces network isolation and does not establish the final VM or
+physical data-network path. Do not infer that rootless defaults use this mode.
+
+Build a scratch image containing the exact native Rust executable from the same
+run, with no registry base image or package installation. Verify its bytes using
+podman cp from a non-running check container. Record content-addressed image ID,
+available manifest digest, native executable hash, and exported OCI archive hash.
+Run as container UID/GID 65532:65532, with read-only rootfs, all capabilities dropped,
+no-new-privileges, and no privileged operation. A 256 MiB memory and 64-PID guard
+are functional safety limits, not equivalent final benchmark allocations. No CPU
+affinity/quota is selected. Record and inspect actual container limits and cgroup
+placement; systemd accounting alone is not assumed to describe the payload.
+
+### Lifecycle and evidence
+
+mt firewall check --with-podman adds Podman to the identical native/WASIp2 case list.
+An mt child controls each generated user service; the parent recovers its owned
+unit/container if interrupted. Definitions use XDG_RUNTIME_DIR/containers/systemd,
+no Install section, Restart=no, Pull=never, and no auto-updates. Record the exact
+Quadlet, generated service, live container inspect, unit states, journal, and cleanup.
+Inspection synchronization is separate from actual allowed/denied readiness probes.
+Builds, image preparation/export, and unit generation are outside any measurement.
+The same client/backend fixtures, policy, and timing limits apply to every variant.
+
+Clean up only run-specific definitions, services, containers, and image tags, retaining
+raw artifacts and the OCI archive. Preserve failures; container checks fail fast after
+a failed case and record the expected count, completed cases, and that the remainder
+was not run.
+No performance campaign, VM deployment, or final resource/topology decision is added.
+
+### Primary references
+
+Consulted 2026-10-31: [Quadlet](https://docs.podman.io/en/stable/markdown/podman-systemd.unit.5.html)
+for rootless runtime paths and service generation; [Podman build](https://docs.podman.io/en/stable/markdown/podman-build.1.html)
+for scratch builds and timestamp control. Installed-package help/generated units and
+actual DUT checks verify version-specific behavior.
+
+### Observed evidence
+
+The final attempt passed 47 cases per variant (141 total) and exact response parity
+across native, WASIp2, and Podman. Binary identity, actual runtime limits, and forced
+controller-interruption recovery were verified. Cleanup additionally clears the
+owned unit's failed state and restores the initially healthy user manager. An earlier
+audit exposed a cached failed-unit entry; its original evidence remains unchanged.
+See [podman-correctness.md](podman-correctness.md) for exact attempts, hashes, and limits.
 
 ---
 

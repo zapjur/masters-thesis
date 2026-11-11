@@ -2,7 +2,7 @@
 
 ## Status and purpose
 
-**Accepted conceptual design — not implemented.**
+**Accepted conceptual design — TCP feasibility and HTTP correctness commands implemented.**
 
 `mt` means master-thesis. It is a custom Clojure CLI/framework for fully automated
 experiment control, lifecycle management, metadata generation, and artifact collection.
@@ -13,7 +13,7 @@ in [methodology.md](methodology.md); decision status in [decisions.md](decisions
 ## Three-machine control model
 
 `mt` runs centrally on the M4 Max generator/orchestrator. It controls the x86 Linux DUT
-(Wasmtime, Docker, or QEMU/KVM/libvirt VNF and resource measurements) and the M1 Pro
+(Wasmtime, Podman, or QEMU/KVM/libvirt VNF and resource measurements) and the M1 Pro
 backend/receiver through host and SSH/process abstractions. Final artifacts are collected
 on the M4. Macs are supporting machines, not primary DUTs. Verify control/collection
 activity does not distort traffic generation or measured phases.
@@ -30,7 +30,15 @@ mt results
 mt analyze
 ```
 
-These are intended interfaces, not available commands. `doctor` checks prerequisites;
+The commands above are intended interfaces, not available commands. The initial
+`bb mt feasibility tcp --ssh-host ALIAS` command is implemented in `mt/` for the
+bounded development spike; see [tcp-feasibility.md](tcp-feasibility.md).
+The additional `bb mt firewall check --ssh-host ALIAS` command runs the first HTTP
+correctness suite; see [firewall-correctness.md](firewall-correctness.md).
+Its `--with-podman` option manages rootless Quadlet user services, verifies binary
+identity, and compares the same cases across native, WASIp2, and Podman. See
+[podman-correctness.md](podman-correctness.md); the general benchmark adapters remain future work.
+`doctor` checks prerequisites;
 `hosts` exposes availability/configuration; `deploy` builds/deploys artifacts; `run` executes
 scenarios; `status` reports lifecycle state; `results` locates artifacts; `analyze` integrates
 reproducible analysis. Exact options and behavior remain to be designed.
@@ -56,7 +64,7 @@ mt
 
 Scenario parsing/validation resolves experiment configuration. Host/process modules handle
 remote control. Environment adapters encapsulate technology-specific lifecycle details;
-the orchestrator does not directly manage Wasmtime/Docker/VM startup internals.
+the orchestrator does not directly manage Wasmtime/Podman/VM startup internals.
 Traffic profiles are reusable and independent of environment choice. Metrics collectors
 and storage preserve both successful and failed run evidence.
 
@@ -157,8 +165,9 @@ mechanisms remain open. `mt analyze` integrates analysis without overwriting sou
 
 ## Intended future repository structure
 
-This is a planning sketch only. No implementation boilerplate or directories are created
-by this documentation task. Existing README files remain documentation entry points.
+This is the intended broader layout, not a claim of implemented modules. The `mt/`
+feasibility command, TCP probe, EDN scenario, and isolated tool bootstrap now exist
+under D036; the full lifecycle adapters and benchmark engine remain future work.
 
 ```text
 masters-thesis/

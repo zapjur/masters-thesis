@@ -1,0 +1,10 @@
+{
+  "package": "podman-5.8.2-11.el10_2.alma.1.x86_64",
+  "version": "5.8.2",
+  "rootless": true,
+  "network": "host",
+  "memory_bytes": 268435456,
+  "pids_limit": 64,
+  "container_user": "65532:65532",
+  "scope": "functional-correctness"
+}

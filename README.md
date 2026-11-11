@@ -96,13 +96,12 @@ Materials directly related to writing the final thesis.
 ## Accepted baseline
 
 Rust provides shared VNF logic, compiled to WebAssembly for Wasmtime and native x86_64
-for Docker Engine on Linux and QEMU/KVM/libvirt Linux guests with virtio networking.
+for Podman with Quadlet on Linux and QEMU/KVM/libvirt Linux guests with virtio networking.
 Sharing logic reduces implementation differences; networking equivalence still requires
 validation. Rust is not assumed to be universally the fastest WebAssembly language.
 
-All technologies run on the same bare-metal i7-6700K desktop (16 GB RAM, SSD), with
-AlmaLinux 10.2 as the user-reported installed DUT OS and current baseline, with three
-reported NICs. The M4 Max MacBook generates traffic,
+All technologies run on the same bare-metal i5-12400 desktop (16 GB RAM, SSD), with
+verified AlmaLinux 10.2 and three RTL8125 NICs. The M4 Max MacBook generates traffic,
 runs the Clojure `mt` orchestrator, and collects artifacts. The M1 Pro MacBook runs
 controlled backends/receivers; the main vLB benchmark uses a minimal Clojure backend.
 AWS/EC2 may support development or auxiliary experiments, but is not the primary
@@ -114,6 +113,11 @@ active readiness probes, controlled resources, and immutable raw results.
 
 ## Design documents
 
+- [TCP feasibility results](docs/tcp-feasibility.md): native/WASIp2 checks, tools, reproduction, and limits.
+- [HTTP firewall correctness](docs/firewall-correctness.md): implementation, 94 DUT checks, reproduction, and limits.
+- [Podman/Quadlet correctness](docs/podman-correctness.md): container controls, shared-binary checks, and three-variant parity.
+- [L7 firewall milestone](docs/l7-firewall.md): proposed behavior, correctness cases, and implementation gates.
+- [DUT inventory](docs/dut-inventory.md): verified hardware/software and remaining checks.
 - [Architecture](docs/architecture.md): machines, execution environments, and network path.
 - [Methodology](docs/methodology.md): fairness, metrics, repetitions, and analysis.
 - [Experimental framework](docs/experimental-framework.md): `mt`, Ansible, EDN, and future layout.
@@ -122,9 +126,20 @@ active readiness probes, controlled resources, and immutable raw results.
 
 ## Current status and unresolved decisions
 
-Planning only; implementations and provisioning have not started.
+The TCP feasibility milestone is implemented: identical Rust source passes 12 functional
+cases per native/WASIp2 variant on the DUT through `mt feasibility tcp` (D036).
+The custom bootstrap and functional fixtures now use Clojure/Babashka (D037), with
+no Python required for direct preparation or test execution. Ansible is optional.
+The first HTTP/1.1 firewall passes 47 correctness cases per native/WASIp2 variant
+(D038), and its opt-in Podman/Quadlet adapter runs the same cases with the identical
+native executable (D039). The full campaign framework and VM deployment remain
+unimplemented. Temporary tools are prepared through
+the Clojure bootstrap or its optional Ansible wrapper.
+Podman with Quadlet is the accepted container baseline (D033), and the verified
+i5-12400 is the accepted DUT (D034).
 
-Still unresolved: socket/WASI interface and TCP/UDP semantics, NIC topology and compatibility,
+Still unresolved: the final networking/concurrency interface and detailed HTTP semantics,
+NIC topology and capacity,
 traffic generator and collectors, software versions, CPU/memory allocation, traffic sizes
 and rates, warm-up/duration/cooldown, final repetition count, latency boundaries, startup
 boundaries, scalability design, and statistical/outlier procedures.

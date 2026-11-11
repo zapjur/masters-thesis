@@ -1,0 +1,9 @@
+{
+  "parser" : "httparse",
+  "version" : "1.10.1",
+  "url" : "https://static.crates.io/crates/httparse/httparse-1.10.1.crate",
+  "sha256" : "6dbf3de79e51f3d586ab4cb9d5c3e2c14aa28ed23d180cf89b4df0454a69cc87",
+  "index" : "https://index.crates.io/ht/tp/httparse",
+  "features" : [ ],
+  "simd" : false
+}

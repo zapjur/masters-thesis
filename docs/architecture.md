@@ -15,12 +15,13 @@ Compare both network performance and environment/resource overhead on a common D
 | Physical machine | Stable experimental role | Responsibilities |
 | --- | --- | --- |
 | MacBook M4 Max | Generator and orchestrator | Traffic generation, central `mt` control, final artifact collection |
-| x86 desktop: i7-6700K, 16 GB RAM, SSD | Bare-metal DUT | Wasmtime, Docker Engine, QEMU/KVM/libvirt, VNF execution, resource measurements |
+| x86 desktop: i5-12400, 16 GB RAM, SSD | Bare-metal DUT | Wasmtime, Podman, QEMU/KVM/libvirt, VNF execution, resource measurements |
 | MacBook M1 Pro | Backend and receiver | Controlled backend services and traffic destinations |
 
-The user reports AlmaLinux 10.2 installed on the DUT and three NICs (D032). This is
-the current OS baseline; exact kernel/package versions and NIC models/link speeds
-remain unverified. Native VNF builds target x86_64.
+Read-only inspection verified AlmaLinux 10.2 and the i5-12400 DUT, accepted under
+D034. Three RTL8125 NICs use r8169; the active link reported 100 Mb/s and the other
+two had no carrier. See [dut-inventory.md](dut-inventory.md) for evidence and versions.
+Native VNF builds target x86_64.
 All three execution technologies use this same DUT. The Apple Silicon machines are
 supporting hosts, not DUT variants; their capacity must be verified to avoid bottlenecks.
 
@@ -31,7 +32,7 @@ MacBook M4 Max: traffic generator + mt orchestrator
             x86 desktop: common Linux DUT
              +-----------+-----------+
              |           |           |
-          Wasmtime     Docker     QEMU/KVM/libvirt
+          Wasmtime     Podman     QEMU/KVM/libvirt
           Rust Wasm  Rust native  Rust native in Linux guest
              |           |           |
              +-----------+-----------+
@@ -55,15 +56,22 @@ reset/isolation controls are defined in methodology.
                   |                 |
                Wasmtime       +-----+-----+
                               |           |
-                        Docker Engine  Linux guest
+                           Podman     Linux guest
                                        QEMU/KVM/libvirt
                                        virtio networking
 ```
 
-Docker runs the native build. The VM runs the same executable or an equivalent build
-from the same source tree. Shared logic is intended where technically feasible; exact
+Podman with Quadlet runs the native build (D033). `mt` starts/stops the generated
+systemd service and performs active readiness probes. The VM runs the same executable
+or an equivalent build from the same source tree. Shared logic is intended where technically feasible; exact
 WASI/socket interfaces, target, dependencies, and networking adapters require validation.
 Neither source identity nor functional/network-path equivalence is assumed to be proven.
+
+The first HTTP subset now has native/WASIp2 correctness evidence (D038), and D039
+extends its loopback development checks to rootless Podman/Quadlet with host networking.
+The same native binary is copied into a scratch image and verified by hash. This
+does not prove VM parity or define the final data-network/concurrency design. See
+[podman-correctness.md](podman-correctness.md) for the scoped controls and evidence.
 
 ## Network path and hardware proposal
 
@@ -72,7 +80,7 @@ Generator -> ingress -> DUT -> egress -> Backend
 ```
 
 Physical separation of generator and backend traffic is preferred where practical.
-The user reports three DUT NICs. Separate management, ingress, and egress roles are
+Three DUT Ethernet controllers are verified. Separate management, ingress, and egress roles are
 proposed, not assigned. Evaluate available NICs,
 link speeds, cabling/switch layout, compatibility, and routing before selecting the setup.
 
@@ -93,8 +101,9 @@ A single configurable Clojure backend service is planned on the M1 Pro:
 | `cpu-light` | Small deterministic computation/serialization | Optional secondary scenario |
 
 Multiple logical backend destinations may run on the same backend machine. Backend count,
-protocol, framing, capacity, and port/address layout remain open. The firewall may use an
-even simpler TCP/UDP receiver to verify correct forwarding. Backend performance is not
+protocol, framing, capacity, and port/address layout remain open. The L7 firewall needs an HTTP-capable
+minimal backend to verify forwarding; a TCP/UDP receiver alone cannot validate its
+application-layer response contract. Backend performance is not
 an independent variable, but must not silently limit measured VNF performance.
 
 ## Cloud boundary
@@ -119,7 +128,8 @@ Exact CPU IDs, resource limits, traffic tools, and collectors are not selected h
 
 The sibling `../homelab` repository supplies an `hl` power/SSH CLI and a read-only
 Ansible inspection playbook; it does not yet provision the host. See D032 for
-provenance requirements. No host commands were executed for this documentation update.
+provenance requirements. Read-only inspection has now completed; no host configuration
+was changed. The inspected host has been confirmed as the intended DUT (D034).
 
 Before implementation, specify one minimal L7 firewall behavior, then verify a shared
 Rust/Wasmtime/native integration path. HTTP/1.1 without TLS, method/path filtering,
