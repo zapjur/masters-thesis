@@ -7,8 +7,8 @@ authorized proceeding with the staged work on 2026-10-31. The first HTTP/1.1 sub
 is now implemented and validated natively and through Wasmtime under D038; see
 [the correctness evidence](firewall-correctness.md). This does not finalize the
 measurement matrix or concurrency design. D039 adds scoped Podman/Quadlet parity;
-VM parity remains future work. No performance
-results have been collected.
+D040 adds [KVM guest functional parity](vm-correctness.md). Final topology and
+benchmark controls remain open; no performance results have been collected.
 
 The first milestone is an HTTP filtering proxy with equivalent observable behavior
 under Wasmtime, a Linux container, and a Linux VM on the common DUT. This is a

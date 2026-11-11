@@ -117,7 +117,8 @@ package, Python, container, VM, firewall rule, or service configuration for this
 ## Remaining work
 
 Podman/Quadlet functional parity is now covered by D039 and
-[the subsequent container report](podman-correctness.md). VM parity, external NIC/backend traffic, the final
+[the subsequent container report](podman-correctness.md). D040 adds
+[VM functional parity](vm-correctness.md). External NIC/backend traffic, the final
 concurrency design, persistent connections, benchmark resource/measurement controls,
 and final campaigns remain unimplemented. There are no throughput/latency/resource
 claims from this correctness milestone.

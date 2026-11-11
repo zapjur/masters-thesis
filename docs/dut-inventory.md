@@ -107,3 +107,15 @@ verified rootless operation, crun 1.30.1, conmon 2.2.1, the systemd cgroup v2 ma
 subordinate UID/GID ranges, and a running user-systemd session. Earlier absent-package
 queries remain historical facts. No lingering, boot autostart, or network change was
 made for this milestone. See [podman-correctness.md](podman-correctness.md).
+
+## Subsequent VM preparation (D040)
+
+On 2026-11-11 the user installed the four packages pinned in
+[guest.lock.json](../infra/vm/guest.lock.json). Read-only queries verified
+QEMU 10.1.0, libvirt 11.10.0, xorriso 1.5.6, qemu-img availability, accessible
+/dev/kvm, and a working qemu:///session connection. KVM domain capabilities list
+pc-q35-rhel10.2.0 and the installed OVMF firmware. No pre-existing session domains
+were listed at this inspection. The host kernel still reported
+6.12.0-211.68.1.el10_2.x86_64. The temporary Rust/Wasmtime toolchain had disappeared
+and was restored using the unchanged checksum lock; the failed initial attempt is
+retained. See [vm-correctness.md](vm-correctness.md) for actual guest evidence.

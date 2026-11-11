@@ -1,0 +1,27 @@
+---
+- name: Prepare the pinned VM correctness environment
+  hosts: homelab
+  gather_facts: false
+  become: false
+  vars:
+    mt_vm_packages:
+      - qemu-kvm-10.1.0-16.el10_2.5.alma.1.x86_64
+      - libvirt-daemon-kvm-11.10.0-12.9.el10_2.alma.1.x86_64
+      - libvirt-client-11.10.0-12.9.el10_2.alma.1.x86_64
+      - xorriso-1.5.6-6.el10.x86_64
+  tasks:
+    - name: Install selected packages and distribution dependencies
+      become: true
+      ansible.builtin.dnf:
+        name: "{{ mt_vm_packages }}"
+        state: present
+
+    - name: Check unprivileged session libvirt
+      ansible.builtin.command:
+        argv: [virsh, -c, 'qemu:///session', list, --all]
+      changed_when: false
+
+    - name: Check KVM capabilities without creating a domain
+      ansible.builtin.command:
+        argv: [virsh, -c, 'qemu:///session', domcapabilities, --virttype, kvm]
+      changed_when: false

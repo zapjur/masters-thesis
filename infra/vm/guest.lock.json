@@ -1,0 +1,15 @@
+{
+  "scope": "functional-correctness",
+  "uri": "qemu:///session",
+  "packages": ["qemu-kvm-10.1.0-16.el10_2.5.alma.1.x86_64", "libvirt-daemon-kvm-11.10.0-12.9.el10_2.alma.1.x86_64", "libvirt-client-11.10.0-12.9.el10_2.alma.1.x86_64", "xorriso-1.5.6-6.el10.x86_64"],
+  "image_url": "https://repo.almalinux.org/almalinux/10.2/cloud/x86_64/images/AlmaLinux-10-GenericCloud-10.2-20261012.0.x86_64.qcow2",
+  "image_sha256": "cbee4726fc0f5a60694bb4f289003cc221e715dfbacebcce76b54daf386d8eca",
+  "checksum_url": "https://repo.almalinux.org/almalinux/10.2/cloud/x86_64/images/CHECKSUM",
+  "machine": "pc-q35-rhel10.2.0",
+  "vcpus": 1,
+  "memory_mib": 1024,
+  "boot_timeout_seconds": 240,
+  "network": "virtio-net-pci/slirp-loopback-forwarding",
+  "guest_backend_host": "10.0.2.2",
+  "guest_firewall_port": 8080
+}

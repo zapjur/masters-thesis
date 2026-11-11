@@ -70,7 +70,9 @@ Neither source identity nor functional/network-path equivalence is assumed to be
 The first HTTP subset now has native/WASIp2 correctness evidence (D038), and D039
 extends its loopback development checks to rootless Podman/Quadlet with host networking.
 The same native binary is copied into a scratch image and verified by hash. This
-does not prove VM parity or define the final data-network/concurrency design. See
+does not define the final data-network/concurrency design. D040 adds an opt-in
+transient KVM correctness adapter using virtio/SLIRP and the exact native binary;
+see [vm-correctness.md](vm-correctness.md) for its evidence and network differences. See
 [podman-correctness.md](podman-correctness.md) for the scoped controls and evidence.
 
 ## Network path and hardware proposal
