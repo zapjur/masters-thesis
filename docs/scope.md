@@ -121,12 +121,13 @@ If the answer to question 4 is yes, the feature should generally remain optional
 
 The primary VNF language is Rust, sharing logic across Wasmtime WebAssembly and native
 x86_64 Podman / QEMU/KVM/libvirt variants where feasible. All run on the same
-bare-metal x86 Linux DUT; AlmaLinux 10.2 is the verified installed OS and current baseline. Three physical
-machines separate DUT, generation/orchestration, and backend roles.
+bare-metal x86 Linux DUT; AlmaLinux 10.2 is the verified installed OS and current baseline. Four host roles are defined in [architecture.md](architecture.md): M1 controller/backend/storage,
+M4 generator, common DUT and planned monitoring host (Raspberry Pi model unspecified).
 
 Clojure `mt` with EDN scenarios automates execution; Ansible configures hosts. Controlled
-Clojure backends are permitted outside the DUT. The primary vLB backend uses `minimal`
-mode. Deterministic `delayed` and `cpu-light` modes are optional secondary scenarios.
+Clojure correctness fixtures remain. D047 proposes Rust/Axum/SQLite application backends
+outside the DUT. Synthetic HTTP and complementary Social Feed workloads are defined in
+[http-workloads.md](http-workloads.md).
 AWS/EC2 may support development, CI, functional/reproducibility tests, or auxiliary
 experiments, but not the primary final measurements without a new justified decision.
 
@@ -146,3 +147,7 @@ allocation, and statistical tests remain proposed. Consult [decisions.md](decisi
 Optional source-language or runtime experiments must not delay the primary comparison.
 The user authorized the staged L7 firewall plan; inventory/specification and networking
 feasibility precede substantial implementation. See [l7-firewall.md](l7-firewall.md).
+
+Edge computing is application context for constrained resources, memory and startup, not
+a new dimension of edge placement/distributed scheduling. Backend languages and databases
+are controlled workload infrastructure, not independent comparison subjects.
