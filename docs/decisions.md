@@ -866,6 +866,58 @@ See [podman-correctness.md](podman-correctness.md) for exact attempts, hashes, a
 
 ---
 
+## D040 — KVM firewall functional parity
+
+**Status:** accepted for the user-authorized VM correctness implementation;
+observed results are reported separately in [vm-correctness.md](vm-correctness.md).
+No final benchmark topology, allocation, or performance result is accepted here.
+
+Use unprivileged session libvirt, KVM (verified through QMP), a pinned AlmaLinux
+10.2 cloud image, a run-owned qcow2 overlay, virtio disk/network, and the identical
+native musl executable verified in the guest by SHA-256. Package/image pins live
+in infra/vm/guest.lock.json. The user installed the pinned QEMU/libvirt/xorriso
+packages on 2026-11-11. Read-only capabilities confirm the machine type and KVM
+availability; that alone is not evidence of firewall parity.
+
+For this functional milestone, QEMU user networking forwards unique host loopback
+ports to guest SSH and HTTP; the guest reaches the host loopback backend through
+10.0.2.2. Raw QEMU networking arguments are retained in domain XML because this
+adapter uses SLIRP host forwarding. No host bridge or physical NIC change is made.
+This differs from native/WASIp2/Podman loopback paths and cannot support an isolated
+execution-overhead claim. One vCPU/1024 MiB are development guards only.
+
+Reuse the 47-case wire suite and active allowed/denied probes. The VM backend Host
+assertion uses its guest-facing address; client response hashes must still match.
+Fail fast on VM case failure and retain partial evidence. Destroy only the unique
+transient domain, verify absence, remove ephemeral seed/key files, and retain logs,
+configuration, and private guest overlay evidence. Pin SSH host keys before boot;
+do not disable verification. Ordinary shutdown uses an owned-resource hook;
+SIGKILL/power loss require scoped recovery and are not claimed as solved.
+
+See the linked report for reproduction, credential-bearing artifact handling,
+network limitations, recovery scope, and primary references.
+
+The final retained attempt passed 47 cases in each native/WASIp2/Podman/VM variant
+(188 total) with exact response parity, verified guest binary identity, KVM and
+virtio_net, and scoped supervisor-interruption cleanup. Earlier toolchain and PCI
+setup failures are retained in the report. These are functional observations only.
+
+---
+
+## D041 — Evaluate k6 for L7 load generation
+
+**Status:** proposed
+
+The user suggested Grafana k6 for the L7 workload. Evaluate the local CLI on the M4
+Max using mt, pinned tools/scripts, explicit connection semantics, separate allowed
+and denied response checks, and an arrival-rate pilot with dropped-iteration and
+generator/backend capacity evidence. Keep the raw-wire Clojure correctness suite.
+k6 client HTTP timing does not isolate VNF latency or collect total VM memory.
+See [k6-evaluation.md](k6-evaluation.md) for acceptance conditions and official sources.
+No k6 installation, benchmark campaign, final load matrix, or acceptance is implied.
+
+---
+
 ## Remaining decisions
 
 D005 remains the optional Rust vs C/C++ vs TinyGo WebAssembly source-language proposal.

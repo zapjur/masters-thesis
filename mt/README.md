@@ -2,8 +2,10 @@
 
 The Clojure experiment controller currently implements `feasibility tcp` and `firewall check`,
 using the existing controller Babashka (tested with 1.12.218). General `deploy`,
-`run`, metric collection, VM adapters, and analysis are not implemented yet. The
-HTTP correctness command can optionally manage a rootless Podman/Quadlet variant.
+`run`, metric collection, and analysis are not implemented yet. The HTTP correctness
+command optionally manages rootless Podman/Quadlet and transient KVM VM variants.
+See [VM correctness](../docs/vm-correctness.md) for package/image pins, networking,
+private artifact handling, and reproduction with `--with-vm`.
 No additional Clojure dependencies or JVM installation are required. The DUT uses
 checksum-pinned Babashka 1.12.218 for the Clojure fixtures; no Python is required there.
 

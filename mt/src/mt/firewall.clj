@@ -8,12 +8,15 @@
   (:import [java.time Instant] [java.util UUID]))
 
 (defn options [args]
-  (when (> (count (filter #{"--with-podman"} args)) 1)
-    (throw (ex-info "--with-podman may appear only once" {})))
-  (assoc (core/options (remove #{"--with-podman"} args)) :podman? (boolean (some #{"--with-podman"} args))))
+  (doseq [flag ["--with-podman" "--with-vm"]]
+    (when (> (count (filter #{flag} args)) 1)
+      (throw (ex-info (str flag " may appear only once") {}))))
+  (assoc (core/options (remove #{"--with-podman" "--with-vm"} args))
+         :podman? (boolean (some #{"--with-podman"} args))
+         :vm? (boolean (some #{"--with-vm"} args))))
 
 (defn check! [args]
-  (let [{:keys [host root podman?]} (options args)
+  (let [{:keys [host root podman? vm?]} (options args)
         repo core/repo
         id (str "http-" (.toEpochMilli (Instant/now)) "-" (UUID/randomUUID))
         output (fs/path repo "experiments/local" id)
@@ -24,11 +27,15 @@
                       "infra/feasibility/bootstrap.clj" "mt/src/mt/core.clj" "mt/src/mt/firewall.clj"
                       "mt/src/mt/http_check.clj" "mt/src/mt/tcp_check.clj" "mt/src/mt/quadlet.clj" "mt/bb.edn"
                       "infra/containers/firewall/Containerfile" "infra/containers/podman.lock.json"
-                      "infra/quadlet/firewall.container.in" "infra/ansible/playbooks/prepare-podman.yml"]
+                      "infra/quadlet/firewall.container.in" "infra/ansible/playbooks/prepare-podman.yml"
+                      "mt/src/mt/vm.clj" "infra/vm/guest.lock.json" "infra/ansible/playbooks/prepare-vm.yml"]
         base-scenario (edn/read-string (slurp (str (fs/path repo "experiments/scenarios/firewall-correctness.edn"))))
         scenario (cond-> base-scenario
                    podman? (assoc :variants [:native :wasm :podman] :order [:native :wasm :podman]
-                                  :container (json/parse-string (slurp (str (fs/path repo "infra/containers/podman.lock.json"))) true)))
+                                  :container (json/parse-string (slurp (str (fs/path repo "infra/containers/podman.lock.json"))) true))
+                   vm? (update :variants conj :vm)
+                   vm? (update :order conj :vm)
+                   vm? (assoc :vm (json/parse-string (slurp (str (fs/path repo "infra/vm/guest.lock.json"))) true)))
         dependency (json/parse-string (slurp (str (fs/path repo "implementations/firewall/dependencies.lock.json"))) true)
         cache (fs/path repo ".cache/http")
         ssh ["ssh" "-o" "BatchMode=yes" "-o" "ConnectTimeout=10" host]]
@@ -65,6 +72,7 @@
         (core/command! ["scp" "-q" "-o" "BatchMode=yes"
                         (str (fs/path repo "mt/src/mt/http_check.clj")) (str (fs/path repo "mt/src/mt/tcp_check.clj"))
                         (str (fs/path repo "mt/src/mt/quadlet.clj"))
+                        (str (fs/path repo "mt/src/mt/vm.clj"))
                         (str host ":" work "/mt/")])
         (core/command! ["scp" "-q" "-o" "BatchMode=yes"
                         (str (fs/path repo "infra/containers/firewall/Containerfile"))

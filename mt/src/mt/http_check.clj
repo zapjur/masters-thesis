@@ -1,7 +1,7 @@
 (ns mt.http-check
   "HTTP correctness fixtures on DUT loopback; no performance measurements."
   (:require [babashka.fs :as fs] [babashka.process :as process]
-            [clojure.string :as str] [mt.tcp-check :as tcp] [mt.quadlet :as quadlet])
+            [clojure.string :as str] [mt.tcp-check :as tcp] [mt.quadlet :as quadlet] [mt.vm :as vm])
   (:import [java.net Socket SocketException SocketTimeoutException]
            [java.io ByteArrayOutputStream]
            [java.security MessageDigest]
@@ -174,7 +174,7 @@
     (when forwarded?
       (let [head (first seen) headers (into {} (:headers head))]
         (tcp/check! (= (str "GET " (or (:target case) "/allowed") " HTTP/1.1") (:line head)) "Request target changed")
-        (tcp/check! (= (str "127.0.0.1:" (:port backend)) (get headers "host")) "Backend Host was not rewritten")
+        (tcp/check! (= (str (or (:host backend) "127.0.0.1") ":" (:port backend)) (get headers "host")) "Backend Host was not rewritten")
         (tcp/check! (= "0" (get headers "content-length")) "Forwarded request is not bodyless")
         (tcp/check! (= "close" (get headers "connection")) "Backend connection not explicitly closed")
         (when (:check-hop case)
@@ -183,12 +183,14 @@
 
 (defn run-case! [command case output scenario]
   (let [execution (if (fn? command) (command case output scenario) {:argv command})
-        backend (start-backend (or (:mode case) :normal) scenario)
-        port (with-open [listener (tcp/listener)] (.getLocalPort listener))
-        argv (into (:argv execution) (concat [(str "127.0.0.1:" port) (str "127.0.0.1:" (:port backend))
+        backend (assoc (start-backend (or (:mode case) :normal) scenario) :host (:backend-host execution))
+        port (or (:listen-port execution) (with-open [listener (tcp/listener)] (.getLocalPort listener)))
+        app-args (vec (concat [(or (:listen-address execution) (str "127.0.0.1:" port))
+                                    (str (or (:backend-host execution) "127.0.0.1") ":" (:port backend))
                                     (str (:io-timeout-ms scenario)) (str (:accept-timeout-ms scenario))
                                     (str (:max-head-bytes scenario)) (str (:max-headers scenario))
                                     (str (:max-body-bytes scenario)) (str (:max-connections scenario))] (:policy scenario)))
+        argv (if-let [wrap (:wrap-argv execution)] (wrap app-args) (into (:argv execution) app-args))
         name (:id case) proc (atom nil)
         result (atom {:case name :started_at (tcp/utc) :command argv :status "failed"})]
     (try
@@ -249,7 +251,8 @@
         (doseq [[path source-key] [["firewall/src/main.rs" "implementations/firewall/src/main.rs"]
                                  ["firewall/src/http.rs" "implementations/firewall/src/http.rs"]
                                  ["firewall/dependencies.lock.json" "implementations/firewall/dependencies.lock.json"]
-                                 ["mt/http_check.clj" "mt/src/mt/http_check.clj"] ["mt/tcp_check.clj" "mt/src/mt/tcp_check.clj"]]]
+                                 ["mt/http_check.clj" "mt/src/mt/http_check.clj"] ["mt/tcp_check.clj" "mt/src/mt/tcp_check.clj"]
+                                 ["mt/vm.clj" "mt/src/mt/vm.clj"]]]
           (tcp/check! (= (tcp/sha256 (fs/path work path)) (get-in @metadata [:source_sha256 (keyword source-key)])) "Deployed source hash mismatch"))
         (swap! metadata assoc :toolchains lock :dependency (tcp/read-json (fs/path work "firewall/dependencies.lock.json"))
                :cases cases :runtime_binary_sha256 (tcp/sha256 runtime)
@@ -260,7 +263,7 @@
                :wasmtime (tcp/capture! [runtime "--version"] (fs/path output "wasmtime-version.txt")))
         (when (:container scenario)
           (swap! metadata assoc :container_environment (quadlet/preflight! output (:container scenario))))
-        (doseq [variant (remove #{"podman"} (:order scenario))]
+        (doseq [variant (remove #{"podman" "vm"} (:order scenario))]
           (let [target (get lock (if (= variant "native") :native_target :wasm_target))
                 library (str (fs/path output (str "libhttparse-" variant ".rlib")))
                 binary (str (fs/path output (if (= variant "native") "firewall-native" "firewall.wasm")))
@@ -310,6 +313,18 @@
               (swap! metadata assoc :container_recovery (quadlet/recovery-check! work tools image output scenario))
               (finally
                 (tcp/capture! ["podman" "rmi" (:tag image)] (fs/path output "podman-image-cleanup.txt"))))))
+        (when-let [lock (:vm scenario)]
+          (let [guest (vm/prepare! work output tools (fs/path output "firewall-native") lock)
+                case-output (fs/path output "vm")]
+            (try
+              (fs/create-dir case-output)
+              (doseq [case cases]
+                (let [result (run-case! (vm/command-factory guest) case case-output scenario)]
+                  (swap! summary update :cases conj (assoc result :variant "vm"))
+                  (println (str "vm: " (:id case) ": " (:status result))) (flush)
+                  (tcp/check! (= "passed" (:status result)) (str "VM case failed; remaining VM cases not run: " (:id case)))))
+              (vm/recovery-check! guest)
+              (finally (vm/cleanup! guest)))))
         (let [pairs (group-by :case (:cases @summary)) variants (set (:variants scenario))]
           (tcp/check! (= (count cases) (count pairs)) "Missing HTTP cases")
           (doseq [[name results] pairs]

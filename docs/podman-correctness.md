@@ -152,7 +152,8 @@ source snapshots, successful/failed lifecycle records, and logs remain retained.
 Timestamps and runtime accounting configuration are provenance, not measured startup,
 CPU, or memory results.
 
-Final concurrency, equal resources, external NIC/backend traffic, VM parity, and
+VM functional parity is now covered by [D040's report](vm-correctness.md).
+Final concurrency, equal resources, external NIC/backend traffic, and
 benchmark campaigns remain open. Scratch/musl and host-network choices are not
 silently promoted into a complete final methodology.
 

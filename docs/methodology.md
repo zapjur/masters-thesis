@@ -110,7 +110,9 @@ and steady/bursty traffic. Candidate sizes are 64, 256, 512, 1024, and 1500 byte
 IMIX-like profile is optional. Specify payload versus wire size and framing overhead.
 Exact sizes, load levels (including any percentage reference), and rates remain proposed.
 
-TRex is a candidate, not the accepted generator. Verify hardware/NIC compatibility,
+TRex is a candidate, not the accepted generator. D041 also proposes evaluating
+[k6 for the HTTP L7 workload](k6-evaluation.md), subject to generator/backend
+headroom, explicit connection semantics, and an automated arrival-rate pilot. Verify hardware/NIC compatibility,
 socket-workload semantics, and the ability to preserve the accepted M4 generator role.
 Simpler development tools are permitted. Any required role change needs an explicit
 proposal rather than moving traffic generation onto the DUT silently.
