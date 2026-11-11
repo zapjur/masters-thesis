@@ -13,7 +13,7 @@ The same 47 wire cases, Clojure client/backend, method/path policy, deadlines, a
 allowed/denied readiness probes run against native Rust, WASIp2/Wasmtime, and the
 container. All three must produce identical client response bytes. These remain
 sequential functional checks on DUT loopback, not performance measurements or the
-final three-machine data path. VM integration is still future work.
+final performance data path. VM integration is now functionally validated under [D040](vm-correctness.md); the earlier Podman evidence below is preserved.
 
 ## Installed environment and chosen controls
 

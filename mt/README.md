@@ -132,3 +132,12 @@ Clojure LSP and clj-kondo exclude `experiments/local/` and downloaded `.cache/`
 artifacts from analysis. Saved run sources may retain historical namespace layouts
 and must not be edited to resolve editor diagnostics. Restart the language server
 after changing editor configuration to clear findings from previously analyzed files.
+
+## Planned campaign host roles
+
+The M1 Pro is the primary mt controller, local backend host and central immutable artifact
+store (D042–D044). Future mt run campaigns will remotely supervise k6 on M4 Max, selected
+VNFs on the DUT and retrieve monitoring from the planned Raspberry Pi (model unspecified).
+These campaign interfaces are not implemented by the existing correctness commands.
+See [framework lifecycle](../docs/experimental-framework.md),
+[monitoring plan](../docs/monitoring.md) and [roadmap](../docs/implementation-roadmap.md).

@@ -168,3 +168,11 @@ with a firewall first and load balancer second. Exact application semantics rema
 provide identical traffic profiles and minimal backends. Clojure orchestration is outside
 the measured datapath; backend behavior remains controlled rather than an independent
 variable. Optional runtime/language comparisons do not change the primary experiment.
+
+## Revised experimental context
+
+D042–D050 preserve these research questions and hypotheses. Synthetic HTTP isolates
+execution-environment effects; Social Feed API provides complementary application context.
+Backend language/database comparisons and edge scheduling are outside scope. Host roles,
+reference-path interpretation and pilot-driven statistics are authoritative in
+[architecture.md](architecture.md) and [methodology.md](methodology.md).

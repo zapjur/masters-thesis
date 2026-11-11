@@ -4,7 +4,7 @@ The first restricted HTTP/1.1 firewall is implemented in shared Rust using httpa
 1.10.1. Native Linux/musl and WASIp2/Wasmtime pass 47 wire cases each, with paired
 response parity verified on the i5-12400 DUT. The Podman/Quadlet adapter now runs the
 same native artifact through the same cases; see [the container evidence](../../docs/podman-correctness.md).
-VM parity remains future work. See [the original evidence](../../docs/firewall-correctness.md).
+D040 establishes VM parity: all four controls pass 47 cases each (188 total); see [VM evidence](../../docs/vm-correctness.md). See [the original evidence](../../docs/firewall-correctness.md).
 
 The functional contract is accepted under D038, implementing a subset of D035. See
 [the firewall contract](../../docs/l7-firewall.md) for method/path rules, default-deny
@@ -35,3 +35,7 @@ Rules are evaluated in order; omitted matches are denied. `MAX_CONNECTIONS=0`
 continues until an idle deadline or external termination. The automated suite uses
 three connections per process: two active readiness checks and one case. The
 current model is single-threaded and sequential, with one request per connection.
+
+Concurrency and HTTP-body/status/reuse extensions remain planning work under D050; see
+[the investigation](../../docs/l7-firewall.md#benchmark-readiness-investigation-d050)
+and [implementation roadmap](../../docs/implementation-roadmap.md). No performance claim follows from correctness.

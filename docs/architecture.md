@@ -1,141 +1,98 @@
 # Experimental Architecture
 
-## Status
+## Status and authority
 
-**Baseline accepted — networking details and measurement configuration remain open.**
+D042–D050 record the revised design. Host responsibilities and the two-level HTTP
+strategy are accepted; backend stack, monitoring stack, and concurrency design remain
+proposals. Deployment is not implied. See [roadmap](implementation-roadmap.md),
+[methodology](methodology.md), and [automation](experimental-framework.md).
 
-Accepted choices and proposals are recorded in [decisions.md](decisions.md). This document
-specifies the physical/logical system; [methodology.md](methodology.md) specifies scientific
-controls and [experimental-framework.md](experimental-framework.md) specifies automation.
+## Physical hosts
 
-## Objective and physical roles
-
-Compare both network performance and environment/resource overhead on a common DUT.
-
-| Physical machine | Stable experimental role | Responsibilities |
+| Host | Role | Responsibilities and controls |
 | --- | --- | --- |
-| MacBook M4 Max | Generator and orchestrator | Traffic generation, central `mt` control, final artifact collection |
-| x86 desktop: i5-12400, 16 GB RAM, SSD | Bare-metal DUT | Wasmtime, Podman, QEMU/KVM/libvirt, VNF execution, resource measurements |
-| MacBook M1 Pro | Backend and receiver | Controlled backend services and traffic destinations |
+| A: MacBook Pro M1 Pro, 32 GB RAM, macOS | Primary controller, backends, central storage | Clojure/Babashka `mt`, EDN configuration/metadata, Ansible, appropriate builds/deployment, local synthetic and Social Feed backends, multiple backend instances, immutable raw artifacts, remote generator supervision, Prometheus retrieval |
+| B: MacBook Pro M4 Max, macOS | Dedicated traffic generator | Remote Grafana k6 scenarios, request metrics, diagnostics and export to A; no main orchestrator, backend, or central storage during campaigns |
+| C: Intel Core i5-12400, 16 GB RAM, SSD, AlmaLinux 10.2 | Common bare-metal DUT | Selected Rust vFW/vLB, Wasmtime/WASIp2 or Podman/Quadlet or QEMU/KVM/libvirt; controlled CPU/memory, exporters, reproducible deployment and scoped cleanup |
+| D: Raspberry Pi, model and purchase undecided | Planned monitoring/infrastructure | Preferred Prometheus/Grafana, time-series storage and run exports; ARM64 Linux compatibility to verify on chosen hardware; portable to another Linux host |
 
-Read-only inspection verified AlmaLinux 10.2 and the i5-12400 DUT, accepted under
-D034. Three RTL8125 NICs use r8169; the active link reported 100 Mb/s and the other
-two had no carrier. See [dut-inventory.md](dut-inventory.md) for evidence and versions.
-Native VNF builds target x86_64.
-All three execution technologies use this same DUT. The Apple Silicon machines are
-supporting hosts, not DUT variants; their capacity must be verified to avoid bottlenecks.
+The controller and backend are distinct logical roles on physical host A. All central
+management originates there. Finish builds, preparation and deployment before measured
+traffic; defer expensive retrieval/compression until afterward. Measure backend CPU,
+memory, storage and network headroom, including contention with controller activity.
+B must retain generator headroom; its execution interface must allow another compatible
+host. Neither Mac is a primary DUT.
 
-```text
-MacBook M4 Max: traffic generator + mt orchestrator
-                         |
-                         v
-            x86 desktop: common Linux DUT
-             +-----------+-----------+
-             |           |           |
-          Wasmtime     Podman     QEMU/KVM/libvirt
-          Rust Wasm  Rust native  Rust native in Linux guest
-             |           |           |
-             +-----------+-----------+
-                         |
-                         v
-        MacBook M1 Pro: backend / receiver
-```
+D connects by Ethernet to the home LAN and scrapes C over that LAN; no dedicated
+Pi–DUT cable is required. D is not known to be purchased or operational. Model, RAM,
+storage and deployment remain unresolved. Evaluate Prometheus/Grafana under a constrained
+memory budget (including a possible 2 GB configuration), bounded cardinality/retention,
+and external SSD versus microSD. Optional Wake-on-LAN, Tailscale, Pi-hole or similar
+services must remain lightweight and stable; suspend intensive homelab work during
+campaigns. Monitoring resource consumption stays outside the VNF host except exporters.
 
-Each selected environment runs vFW or vLB. The diagram shows alternative execution
-paths, not a requirement to run all variants concurrently. Experiment ordering and
-reset/isolation controls are defined in methodology.
-
-## Execution model
+## Logical paths
 
 ```text
-                    Shared Rust source
-                           |
-                  +--------+--------+
-                  |                 |
-             WebAssembly       native x86_64
-                  |                 |
-               Wasmtime       +-----+-----+
-                              |           |
-                           Podman     Linux guest
-                                       QEMU/KVM/libvirt
-                                       virtio networking
+M1 Pro: mt controller --management--> M4 Max, DUT, monitoring host
+         | local supervision
+         v
+M1 Pro: backend processes and immutable artifact storage
+
+Measured application path:
+M4 Max / k6 --> DUT / selected vFW or vLB --> M1 Pro / HTTP backend(s)
+
+Monitoring path (planned):
+Raspberry Pi / Prometheus --scrape--> DUT exporters
+M1 Pro / mt --post-run query/export--> Prometheus
+Grafana reads Prometheus for inspection; dashboards are not raw evidence.
 ```
 
-Podman with Quadlet runs the native build (D033). `mt` starts/stops the generated
-systemd service and performs active readiness probes. The VM runs the same executable
-or an equivalent build from the same source tree. Shared logic is intended where technically feasible; exact
-WASI/socket interfaces, target, dependencies, and networking adapters require validation.
-Neither source identity nor functional/network-path equivalence is assumed to be proven.
+Only one selected environment is measured at a time unless an explicit scaling scenario
+specifies otherwise. Native Rust outside a container/VM is a reference and correctness
+control, not a fourth primary technology.
 
-The first HTTP subset now has native/WASIp2 correctness evidence (D038), and D039
-extends its loopback development checks to rootless Podman/Quadlet with host networking.
-The same native binary is copied into a scratch image and verified by hash. This
-does not define the final data-network/concurrency design. D040 adds an opt-in
-transient KVM correctness adapter using virtio/SLIRP and the exact native binary;
-see [vm-correctness.md](vm-correctness.md) for its evidence and network differences. See
-[podman-correctness.md](podman-correctness.md) for the scoped controls and evidence.
+## Execution and evidence
 
-## Network path and hardware proposal
+Share Rust function logic wherever feasible. Compile WASIp2 for Wasmtime and native
+x86_64 for Podman/Quadlet and the Linux KVM guest. Prefer the identical native executable,
+otherwise retain justified build differences and hashes. Ansible prepares hosts;
+`mt deploy` handles artifacts; `mt run` owns campaign lifecycle.
 
-```text
-Generator -> ingress -> DUT -> egress -> Backend
-```
+The D038–D040 restricted firewall is functionally validated: 47 wire cases each for
+native, WASIp2, Podman and KVM, 188 total with exact client-response parity. See
+[original HTTP](firewall-correctness.md), [Podman](podman-correctness.md) and
+[VM evidence](vm-correctness.md). This proves neither concurrent-load feasibility nor
+performance. vLB, remote k6 campaigns, external backends and monitoring remain unimplemented.
 
-Physical separation of generator and backend traffic is preferred where practical.
-Three DUT Ethernet controllers are verified. Separate management, ingress, and egress roles are
-proposed, not assigned. Evaluate available NICs,
-link speeds, cabling/switch layout, compatibility, and routing before selecting the setup.
+## Network topology validation gate
 
-Container networking, guest virtio networking, and Wasmtime socket access may introduce
-different host paths. Record and control these differences rather than attributing all
-observed overhead solely to execution technology. L7 is the current workload direction, with firewall first and load balancer second.
-A minimal HTTP proxy workload is proposed. Application parsing, firewall rejection,
-load-balancer request selection, and transport handling remain unresolved.
+[dut-inventory.md](dut-inventory.md) records three RTL8125 controllers; the initial
+active link was 100 Mb/s, the other two had no carrier. Later software preparation
+does not establish data-link capacity. Confirm negotiated speed, cable/switch/adapter
+capacity, MTU, routing, addressing and link stability before selecting NIC roles.
 
-## Backends
-
-A single configurable Clojure backend service is planned on the M1 Pro:
-
-| Mode | Behavior | Scope |
+| Candidate | Advantages | Required checks / fairness costs |
 | --- | --- | --- |
-| `minimal` | Minimal response/acknowledgment processing | Primary vLB benchmark |
-| `delayed` | Deterministic configured delay, e.g. 5/20/100 ms | Optional secondary scenario; values illustrative |
-| `cpu-light` | Small deterministic computation/serialization | Optional secondary scenario |
+| Separate ingress/egress, third NIC for management | Clear path and traffic separation using existing NICs | Verify Mac adapters/cabling first; explicit routes and backend access rules; avoid unintended IP forwarding/bypass |
+| Existing switched LAN, explicit VNF endpoint and restricted backend access | May avoid purchases | Shared capacity and management contention; prove k6 cannot access backend through an unintended target/path |
+| Explicit routed subnets with TAP/virtio guest | Reproducible guest path without SLIRP | Privilege/configuration review, host forwarding/bridge CPU cost and route parity |
 
-Multiple logical backend destinations may run on the same backend machine. Backend count,
-protocol, framing, capacity, and port/address layout remain open. The L7 firewall needs an HTTP-capable
-minimal backend to verify forwarding; a TCP/UDP receiver alone cannot validate its
-application-layer response contract. Backend performance is not
-an independent variable, but must not silently limit measured VNF performance.
+A user-space L7 proxy terminates and creates TCP connections; physical traversal alone
+does not prove application inspection. Validate endpoint addresses, request markers,
+backend observation and deny/non-observation tests. Record routes, bridge/TAP setup,
+interface counters and traffic captures where justified. No network changes are made here.
 
-## Cloud boundary
+For final VM measurements evaluate Linux bridge + TAP + virtio, or explicitly routed
+TAP/virtio, against identical ingress/egress segments. Current SLIRP host-forwarding is
+only a functional adapter. Avoid unnecessary NAT and user-space forwarding. Compare
+Podman host networking (less network isolation), host Wasmtime/WASI socket handling,
+and guest virtio/host bridge processing explicitly: equivalent HTTP behavior does not
+make kernel paths identical. Document those costs rather than subtracting them blindly.
 
-AWS/EC2 is not the primary environment for final measurements. Underlying virtualization,
-noisy neighbours, and weaker CPU/network controls may obscure environment and VM overhead.
-Development, CI, functional tests, reproducibility trials, and auxiliary cloud experiments
-are permitted. Changing the primary bare-metal baseline requires evidence and a new decision.
+## Backend and monitoring designs
 
-## Remaining architecture questions
-
-- Verify NIC inventory, link capacity, topology, and traffic-generator compatibility.
-- Select exact Linux guest, runtime/toolchain versions, WASI target and socket integration.
-- Define equivalent network paths, TCP/UDP behavior, backend destinations, and management access.
-- Define CPU affinity/vCPU pinning, memory limits, and host/guest resource accounting.
-- Verify generator/backend headroom and isolate orchestration/collection overhead.
-- Specify background activity controls, power/performance settings, and clock handling.
-
-Exact CPU IDs, resource limits, traffic tools, and collectors are not selected here.
-
-## Existing DUT tooling and next planning step
-
-The sibling `../homelab` repository supplies an `hl` power/SSH CLI and a read-only
-Ansible inspection playbook; it does not yet provision the host. See D032 for
-provenance requirements. Read-only inspection has now completed; no host configuration
-was changed. The inspected host has been confirmed as the intended DUT (D034).
-
-Before implementation, specify one minimal L7 firewall behavior, then verify a shared
-Rust/Wasmtime/native integration path. HTTP/1.1 without TLS, method/path filtering,
-an explicit blocked response, and a minimal forwarding backend are proposals. Define
-parser limits, malformed-request behavior, connection reuse, and response framing.
-The subsequent L7 load balancer can reuse the validated transport/parser path if feasible;
-per-request round-robin is proposed. Keep the same behavior across all three variants.
+[HTTP workloads](http-workloads.md) owns the synthetic and Social Feed design.
+[Monitoring](monitoring.md) owns collector semantics and export reliability. Exact
+versions, allocations, affinity, concurrency, topology and measurement settings require
+pilot evidence and recorded decisions. AWS/EC2 remains auxiliary; final comparisons use C.

@@ -13,16 +13,16 @@ and resistant to measurement bias. H1–H3 are defined in [research.md](research
 Use the same x86 Linux DUT for Wasmtime, Podman, and QEMU/KVM/libvirt. Use Rust
 with as much shared VNF logic as technically feasible. Validate equivalent behavior before
 performance experiments; document unavoidable build, API, and networking differences.
-The reference workloads are now L7 vFW followed by L7 vLB (D031). HTTP request filtering
-and per-request round-robin balancing are proposed, not finalized. Define protocol,
+The reference workloads are now L7 vFW followed by L7 vLB (D031). The restricted D038 firewall is accepted and functionally validated through D040;
+per-request round-robin balancing remains proposed. Define protocol,
 parsing/framing limits, connection reuse, successful forwarding, rejection semantics,
 and request/payload units before benchmarking. Account for HTTP parsing and transport
 work consistently across variants; raw Ethernet processing is not required.
 
 Traffic profiles must be independent of environment adapters. Apply the same resolved
 traffic definition to each technology, with equivalent resources, benchmark duration,
-and backend behavior. The main vLB benchmark uses the `minimal` backend. Other backend
-modes are secondary scenarios. Verify generator/backend headroom and report bottlenecks.
+and backend behavior. Synthetic HTTP is the primary isolation workload; Social Feed adds complementary
+realism (D046). See [http-workloads.md](http-workloads.md) for backend controls. Verify generator/backend headroom and report bottlenecks.
 
 Attempt equivalent compute allocation using process CPU affinity for Wasmtime, Podman
 cpuset/affinity and explicit memory controls, and pinned VM vCPUs with explicit memory
@@ -103,19 +103,46 @@ Potential dimensions are offered load, VNF instance count, CPU resources, and co
 count. Select the final design before campaigns. H3 requires explicit instance-scaling
 resource-cost measurements; offered-load scaling alone does not test that entire claim.
 
-## Traffic proposals
+## HTTP workloads and reference paths
 
-Reusable profiles may cover TCP/UDP, payload/packet sizes, connection counts, offered rates,
-and steady/bursty traffic. Candidate sizes are 64, 256, 512, 1024, and 1500 bytes; an
-IMIX-like profile is optional. Specify payload versus wire size and framing overhead.
-Exact sizes, load levels (including any percentage reference), and rates remain proposed.
+Use [two-level HTTP workloads](http-workloads.md) with identical definitions across
+technologies. [k6](k6-evaluation.md) is the proposed primary L7 generator pending pilots;
+TRex and historical packet-size sets are not current requirements. Record HTTP body,
+header and wire sizes separately. Open arrival-rate profiles control offered load;
+closed VU models need an explicit question about a fixed client population.
 
-TRex is a candidate, not the accepted generator. D041 also proposes evaluating
-[k6 for the HTTP L7 workload](k6-evaluation.md), subject to generator/backend
-headroom, explicit connection semantics, and an automated arrival-rate pilot. Verify hardware/NIC compatibility,
-socket-workload semantics, and the ability to preserve the accepted M4 generator role.
-Simpler development tools are permitted. Any required role change needs an explicit
-proposal rather than moving traffic generation onto the DUT silently.
+| Path | Included overhead / interpretation |
+| --- | --- |
+| Direct M4 → M1 backend | Client, backend and direct transport capacity; does not include DUT traversal |
+| No-VNF path through DUT, where feasible | Explicitly configured routing/bridging and transport control; may differ from a terminating HTTP proxy |
+| Native VNF on DUT | Application parsing/forwarding and host kernel/transport; reference, not fourth primary technology |
+| Wasmtime/WASIp2 | VNF plus Wasmtime/WASI and host networking |
+| Podman/Quadlet | VNF plus container/runtime/cgroup and selected network mode |
+| KVM | VNF plus guest kernel, virtio, QEMU/hypervisor and selected host network path |
+
+Document hop/link/interface differences for each path. Do not subtract direct-backend
+latency as though its physical route matched a VNF-through-DUT route. Keep backend
+configuration/seed, request checks, policy, resource allocation and host configuration
+stable; record unavoidable differences and collector overhead. The M1's orchestration
+must not compete with backend measurement; stage preparation first and defer expensive
+collection. Monitor both M1 backend and M4 generator headroom, network/storage capacity,
+and background activity. Lack of headroom invalidates attribution to VNF saturation.
+
+Separate offered iterations/s, actual HTTP requests/s, successful business requests,
+intentional firewall denials, unexpected statuses, transport errors/timeouts and overload.
+Predeclare sustainable-throughput criteria using achieved load, latency/error bounds,
+dropped iterations, duration/stability and generator/backend headroom. Numerical bounds
+and search procedure require pilots; maximum observed RPS alone is insufficient.
+
+## Monitoring and timing boundaries
+
+[monitoring.md](monitoring.md) defines candidate collectors, CPU normalization, memory
+scopes and failure policy. Record VNF, environment and total-host resource costs;
+export run-specific Prometheus samples to immutable controller storage. A run_id manifest
+joins k6, resource samples, backend diagnostics, configuration and timing windows.
+Prometheus timestamps are sample times; controller events and direct monotonic lifecycle
+timings remain separate. Clock uncertainty and remote launch skew must be quantified.
+Prometheus scraping cannot resolve short startup or initialization peaks by itself.
 
 ## Metadata and source traceability
 
@@ -124,6 +151,7 @@ field schema, not a requirement to use YAML for scenario definitions (which use 
 
 ```yaml
 experiment_id:
+run_id:
 timestamp:
 git_commit:
 
@@ -190,4 +218,22 @@ tests or exclusions retrospectively from final results; retain all raw observati
 - Statistical thresholds, confidence procedures, tests, and outlier policy.
 
 Accepted technology/host choices are in [decisions.md](decisions.md); they are not still
-undecided. Deployment and feasibility verification remain future work.
+undecided. Four-variant firewall correctness is established; benchmark deployment, capacity pilots and monitoring validation remain future work.
+
+## Statistical plan and scope boundary
+
+Use pilot variance and a target confidence-interval precision/effect size to justify
+repetitions and measurement duration; approximately 30 is only a historical suggestion.
+Treat independent repetitions as the experimental units; HTTP requests within a run are
+not independent repetitions. Plan paired/interleaved-block comparisons where appropriate,
+report per-run p50/p95/p99 and throughput with uncertainty, and choose interval estimation
+(e.g. run/block bootstrap) and tests after pilot distribution/dependence checks. Do not
+average percentiles as though they were a pooled latency distribution. Predeclare outlier
+flags, exclusion/failed-run rules and multiple-comparison handling; retain unsuccessful
+runs and report counts/reasons. Distinguish statistical significance, effect size and
+practical relevance. Scaling must specify load, CPU or instances and resource efficiency,
+with units such as successful requests per CPU-second and per allocated/resident memory.
+
+Edge computing motivates startup, memory efficiency, resource constraints and deployment
+overhead only. Edge placement algorithms, distributed scheduling and orchestration are
+outside this comparison. Original research questions and hypotheses remain unchanged.

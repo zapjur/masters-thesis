@@ -358,6 +358,10 @@ Separate machine, application, and experiment lifecycles avoid provisioning work
 
 ## D021 — Controlled backend services
 
+Revision note: D046 refines the workload strategy. D047 proposes replacing the planned
+Clojure application backend with Rust; that language change remains unaccepted. Existing
+Clojure correctness fixtures are preserved.
+
 **Status:** accepted
 
 ### Decision
@@ -592,6 +596,9 @@ for rootless networking considerations. Neither source proves performance on thi
 ---
 
 ## D034 — Verified i5-12400 DUT and corrected hardware baseline
+
+Revision note (D042): hardware/OS acceptance remains in force; host control/storage
+roles below describe the historical baseline and are superseded by D042–D044.
 
 **Status:** accepted
 
@@ -928,3 +935,106 @@ Unresolved details include networking/WASI target and APIs, software/guest versi
 NIC topology, backend protocol/capacity, exact resource allocation, generators/collectors,
 traffic/timing matrix, readiness/latency boundaries, scaling design, and analysis policy.
 Acceptance of a baseline does not imply completed deployment or proven feasibility.
+
+---
+
+## Revision context — 2026-11-11
+
+D042–D050 record the user-requested documentation/planning revision. Acceptance of a
+role or strategy authorizes documenting its target design, not deploying it. Earlier
+entries and evidence retain their historical meaning. D034 still governs verified DUT
+hardware/OS; D038–D040 still govern functional evidence. No performance results follow.
+
+## D042 — Revised four-host physical architecture
+
+**Status:** accepted
+
+Use M1 Pro for primary control/backends/storage, M4 Max for dedicated traffic generation,
+the same i5-12400/16 GB/AlmaLinux 10.2 DUT for all three technologies, and a planned
+Raspberry Pi for monitoring. This supersedes only the host-role portion of D034 and
+its inherited D006 roles; the hardware correction remains accepted. See
+[architecture.md](architecture.md). Native execution stays a reference, not a fourth
+primary technology. Management is separate logically from measured HTTP traffic.
+
+## D043 — M1 Pro as primary controller and artifact host
+
+**Status:** accepted
+
+Run Clojure/Babashka mt, Ansible, configuration/metadata and immutable central artifact
+storage on the 32 GB M1 Pro. It also hosts synthetic/realistic HTTP backends and multiple
+backend instances. Distinct logical roles share hardware: prepare/deploy before measurement,
+defer expensive collection, and verify backend headroom. Supersedes prior M4 central
+control/storage assignments without changing D019/D020 automation responsibilities.
+
+## D044 — M4 Max as remote traffic generator
+
+**Status:** accepted
+
+Dedicate M4 Max to traffic generation during experiments. M1 remotely initiates/supervises
+execution and retrieves artifacts; generator interface remains portable to another compatible
+host. No main orchestrator/backend/central storage runs on M4 during campaigns. k6 tool
+adoption remains conditional under D041/D049, not established by this role decision.
+
+## D045 — Planned portable Raspberry Pi monitoring host
+
+**Status:** accepted for planned host role; hardware purchase and deployment unresolved
+
+Use a separate monitoring/support host, preferably a Raspberry Pi with Linux, Ethernet to
+home LAN and LAN access to DUT exporters. No model or RAM capacity is selected and no
+operational deployment is claimed. No dedicated DUT cable is required. Keep deployment
+portable to another Linux host; evaluate memory/storage/retention and avoid heavy homelab
+activity during campaigns. See [monitoring.md](monitoring.md).
+
+## D046 — Two-level HTTP workload strategy
+
+**Status:** accepted
+
+Use synthetic deterministic HTTP as the primary isolation workload and bounded Social Feed
+API as complementary realism. Both run on the M1 Pro with controlled backend capacity.
+Retain direct-backend, feasible no-VNF-path and native references alongside the three
+primary environments; document unequal paths. See [http-workloads.md](http-workloads.md).
+This refines D021's primary minimal/optional workload distinction without changing the
+research objective to a backend-language/database comparison.
+
+## D047 — Preferred Rust backend architecture
+
+**Status:** proposed
+
+Prefer a minimal deterministic Rust HTTP backend, then Rust/Axum/SQLite Social Feed API.
+Evaluate necessary endpoints, framing, SQLite WAL/contention/reset/seeding and per-instance
+isolation. Backend saturation must not dominate VNF comparisons. If accepted, this replaces
+D021's planned Clojure application-backend language; D021 remains historical and existing
+Clojure correctness fixtures/controller are retained. No dependency/version is selected or
+installed here. Approval and compatibility/capacity validation precede implementation.
+
+## D048 — Preferred Prometheus/Grafana monitoring
+
+**Status:** proposed
+
+Prefer Prometheus/Grafana on the planned monitoring host. Pilot exporters, consistent
+CPU/memory accounting, overhead, clocks, storage/retention/cardinality and failure detection.
+Controller exports run-specific samples to immutable artifacts via run_id/time-window
+manifests. Separate direct startup timing from scrape timestamps. See [monitoring.md](monitoring.md).
+No assumption that the unspecified Raspberry Pi can already sustain the stack is accepted.
+
+## D049 — k6 as proposed primary HTTP generator
+
+**Status:** proposed; refinement of D041, not a separate accepted tool selection
+
+Prioritize local Grafana k6 on M4 under M1 control for L7 pilots using open arrival-rate
+models. Accept only after achieved/offered-load fidelity, connection semantics, generator/
+backend headroom and artifact recovery are validated. D041 remains the original evaluation
+proposal; TRex remains historical optional consideration. See [k6-evaluation.md](k6-evaluation.md).
+
+## D050 — Firewall benchmark-readiness validation requirements
+
+**Status:** accepted requirements; concurrency model and HTTP extensions remain proposed
+
+Preserve D038–D040 correctness while validating sufficient concurrency and workload HTTP
+compatibility across native/WASIp2/Podman/KVM before load claims. Investigate bounded
+nonblocking event-loop/polling as a candidate shared design; do not assume native threads
+or Tokio networking transfer unchanged to WASIp2. Pin/test the selected Wasmtime toolchain,
+make differences explicit, and require deterministic concurrent/framing/deadline tests.
+Request bodies, response status/framing, connection reuse and buffering decisions must
+match the selected backend workloads. See [l7-firewall.md](l7-firewall.md) and the
+[roadmap](implementation-roadmap.md). No implementation is authorized by this planning task.

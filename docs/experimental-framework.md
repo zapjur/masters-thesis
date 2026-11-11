@@ -10,13 +10,22 @@ It operates outside the measured VNF datapath. EDN scenario definitions are acce
 Physical topology is specified in [architecture.md](architecture.md); scientific procedures
 in [methodology.md](methodology.md); decision status in [decisions.md](decisions.md).
 
-## Three-machine control model
+## Four-host control model
 
-`mt` runs centrally on the M4 Max generator/orchestrator. It controls the x86 Linux DUT
-(Wasmtime, Podman, or QEMU/KVM/libvirt VNF and resource measurements) and the M1 Pro
-backend/receiver through host and SSH/process abstractions. Final artifacts are collected
-on the M4. Macs are supporting machines, not primary DUTs. Verify control/collection
-activity does not distort traffic generation or measured phases.
+`mt` runs centrally on the M1 Pro, supervising local backend instances, remote k6 on
+the M4 Max, the common Linux DUT and the planned Raspberry Pi monitoring host.
+All final artifacts reside on the M1 Pro. Management traffic uses the management
+network; controller and backend share hardware but remain distinct logical roles.
+Build, deploy and compress/export outside measured windows. See D042–D045.
+
+The future generator interface should use authenticated SSH with pinned host identity
+and a run-owned remote supervisor: stage hashed scripts/config, start with explicit
+arguments/environment, record remote process identity, poll status and retrieve artifacts.
+Preserve command/parameters, exit status, stdout/stderr, timestamps, k6 summary and
+appropriate raw samples. A disconnected SSH client must not leave an untracked load
+process: design reconnect/status, timeout, cancellation and scoped cleanup, including
+partial-output retrieval. Do not disable host-key verification. This interface is planned,
+not an implemented command. It must remain portable to another compatible generator.
 
 ## Intended CLI
 
@@ -37,7 +46,7 @@ The additional `bb mt firewall check --ssh-host ALIAS` command runs the first HT
 correctness suite; see [firewall-correctness.md](firewall-correctness.md).
 Its `--with-podman` option manages rootless Quadlet user services, verifies binary
 identity, and compares the same cases across native, WASIp2, and Podman. See
-[podman-correctness.md](podman-correctness.md); the general benchmark adapters remain future work.
+[podman-correctness.md](podman-correctness.md). `--with-vm` adds the validated KVM functional adapter; see [vm-correctness.md](vm-correctness.md). General benchmark adapters remain future work.
 `doctor` checks prerequisites;
 `hosts` exposes availability/configuration; `deploy` builds/deploys artifacts; `run` executes
 scenarios; `status` reports lifecycle state; `results` locates artifacts; `analyze` integrates
@@ -123,44 +132,51 @@ Ansible makes machines ready to run experiments. It is not the primary per-bench
 orchestration engine. Preparation/deployment must be kept outside measurement boundaries
 unless explicitly included by a documented startup experiment.
 
-## Single-iteration lifecycle
+## Planned single-iteration lifecycle
 
-1. Validate experiment configuration.
-2. Validate host availability.
-3. Verify DUT state.
-4. Reset experiment environment.
-5. Start backend.
-6. Prepare selected execution environment.
-7. Start VNF.
-8. Detect VNF readiness actively.
-9. Perform warm-up.
-10. Start metric collectors.
-11. Start traffic generation.
-12. Run benchmark.
-13. Stop traffic generation.
-14. Stop metric collectors.
-15. Collect logs/results.
-16. Stop VNF.
-17. Clean up environment.
-18. Wait for cooldown if required.
-19. Persist metadata.
-20. Continue with next repetition/scenario.
+1. Validate the resolved scenario and allocate unique run_id; persist initial metadata.
+2. Check all hosts/prerequisites, clock offsets, stable DUT state and planned order.
+3. Verify generator/backend capacity evidence and current headroom.
+4. Reset state; prepare selected environment and stage artifacts outside measurement.
+5. Start/reset local backend instances and verify their readiness.
+6. Prepare and verify collectors, including target health and pre-start idle baseline.
+7. Start the selected VNF and verify allowed/denied or balancing readiness actively.
+8. Warm up with the specified profile while collectors remain active.
+9. Record coordinated measurement boundaries and remotely start the configured k6 load.
+10. Supervise generator, backend, DUT and collector health; retain events/errors continuously.
+11. Stop measured traffic and record end boundaries; retrieve generator results/diagnostics.
+12. Preserve resource samples through shutdown as required; export monitoring windows.
+13. Stop VNF/backend and clean only run-owned resources, recording cleanup outcome.
+14. Finalize immutable artifacts, completeness/validity status and manifest.
+15. Apply cooldown/database reset and continue with the next randomized/interleaved repetition.
 
-Capture timestamps/configuration throughout the iteration so final metadata includes
-partial failures. Final timing, cooldown, repetition count, and ordering follow methodology.
-The framework must support randomized ordering or preferably randomized/interleaved blocks.
+Persist partial artifacts on every failure, including generator loss or cleanup failure.
+An error must not erase a run or trigger global container/VM/systemd cleanup. Separate
+startup experiments arm direct timing and collectors before the start action; distinguish
+VNF-only readiness from environment boot/deployment, cold/warm caches and compilation.
+Collector verification cannot happen after the startup interval being measured.
+
+## Planned EDN scenario contract
+
+Design only; no schema implementation or example values are accepted here. Cover VNF
+kind, technology, host roles, backend workload/instances/database reset and seed, traffic
+profile/script/version/hash, offered arrival rate, request/response sizes and status mix,
+HTTP version/reuse/timeouts, CPU affinity/quota/vCPUs and memory limits, warm-up,
+measurement/cooldown, repetitions, order/randomization seed, collector set/intervals and
+required validity checks. Resolve units and defaults explicitly; validate unsupported
+HTTP combinations before deployment. Startup scenarios need separate timing/cache fields.
 
 ## Results and reproducibility
 
 Record `git rev-parse HEAD` for every campaign/run and preserve resolved scenario,
-environment versions/configuration, DUT details, compiler/flags, traffic parameters,
-resource allocation, readiness timestamps, durations, repetition, ordering, and failures.
+source hashes and dirty-tree state, environment versions/configuration, hardware/network details, compiler/flags, traffic parameters,
+resource allocation, readiness timestamps, durations, repetition, ordering, k6 outputs, Prometheus exports, backend diagnostics, process logs, timing metadata, error conditions and cleanup outcome. Use run_id to join all sources as specified in [monitoring.md](monitoring.md).
 The conceptual required fields are in [methodology.md](methodology.md). A clean-working-tree
 requirement for final thesis campaigns is proposed, not implemented.
 
 Raw output and run metadata must be immutable, including unsuccessful attempts. Processed
 summaries and figures must be generated separately by scripts with provenance. Future run
-records may use `metadata.edn`; exact schema, IDs, collection protocol, and storage integrity
+records may use `metadata.edn`; exact schema, collection protocol, and storage integrity
 mechanisms remain open. `mt analyze` integrates analysis without overwriting source data.
 
 ## Intended future repository structure
@@ -214,7 +230,7 @@ masters-thesis/
 │   ├── firewall/
 │   └── load-balancer/
 ├── backends/
-│   └── clojure/
+│   └── rust/          # proposed backend direction, D047
 ├── experiments/
 │   ├── scenarios/
 │   ├── runs/
@@ -223,5 +239,5 @@ masters-thesis/
 └── thesis/
 ```
 
-Existing personal notes may remain under `notes/`. The future `mt/`, `backends/`, and
-Ansible tree are to be introduced only when implementation is requested.
+Existing personal notes may remain under `notes/`. Existing feasibility/correctness modules and infrastructure assets are implemented; the
+broader campaign/backend tree remains planned and requires implementation authorization.
