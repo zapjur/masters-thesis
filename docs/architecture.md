@@ -67,6 +67,10 @@ performance. vLB, remote k6 campaigns, external backends and monitoring remain u
 
 ## Network topology validation gate
 
+The [Phase 2 topology feasibility report](network-topology.md) records the 2026-11-19
+inventory, physical and logical proposals, and path validation criteria.
+
+
 [dut-inventory.md](dut-inventory.md) records three RTL8125 controllers; the initial
 active link was 100 Mb/s, the other two had no carrier. Later software preparation
 does not establish data-link capacity. Confirm negotiated speed, cable/switch/adapter
