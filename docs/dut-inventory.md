@@ -119,3 +119,40 @@ were listed at this inspection. The host kernel still reported
 6.12.0-211.68.1.el10_2.x86_64. The temporary Rust/Wasmtime toolchain had disappeared
 and was restored using the unchanged checksum lock; the failed initial attempt is
 retained. See [vm-correctness.md](vm-correctness.md) for actual guest evidence.
+
+## Phase 2 read-only network snapshot
+
+Collected 2026-11-19 at 19:31 UTC over the existing LAN SSH configuration from
+M1 Pro, with host key checks enabled. Thesis source commit
+`95d4f4279315e34e62a0e63a67cba6acb013222b` and homelab source commit
+`3eb45c46615485b39d6bb0cad2749b8fd0309b0d`. The existing homelab inspection
+playbook ran with LVM disabled and a one-run LAN destination override
+(`ok=6 changed=0 unreachable=0 failed=0 skipped=2`). Follow-up evidence came
+from `ip`, `nmcli`, `lspci`, `ethtool`, sysfs, `sysctl`, `bridge` and the kernel
+journal. Exact addresses, gateways, SSH aliases and MACs are in private
+inspection output.
+
+| Interface | PCI address | Carrier and negotiation | MTU | Addressing |
+| --- | --- | --- | --- | --- |
+| eno1 (enp5s0) | 0000:05:00.0 | Up, 100 Mb/s full duplex, autonegotiation on | 1500 | LAN IPv4 /24 via DHCP, IPv6 link-local /64 |
+| enp3s0 | 0000:03:00.0 | Administratively up, no carrier, speed and duplex unknown | 1500 | None observed |
+| enp4s0 | 0000:04:00.0 | Administratively up, no carrier, speed and duplex unknown | 1500 | None observed |
+
+All three are RTL8125 (PCI ID `10ec:8125`), use `r8169`, and report firmware
+`rtl8125b-2_0.0.2`. The host's main IPv4 table has a connected LAN route and
+DHCP default via `eno1`. Route lookup to the SSH client selected `eno1`
+directly. No IPv6 default route was observed. `tailscale0` has an overlay
+IPv4 /32, IPv6 /128 and IPv6 link-local /64, with policy routes via table 52.
+Loopback has its own IPv4 and IPv6 addresses. Both IPv4 and global IPv6
+forwarding settings reported zero. No bridge members were listed. No active
+NetworkManager profiles were observed on either spare physical port.
+
+`eno1` advertised rates up to 2.5 Gb/s. The peer advertisement exposed only
+10/100 modes with autonegotiation. The kernel journal also reported a
+100 Mb/s full-duplex link. Interface error and drop counters were zero in
+this snapshot, which does not establish link stability. A 10/100-only or
+restricted peer, an intermediate device, or a cable/pair issue remains
+possible. The peer identity and physical cause are unresolved. Inspect the
+peer's capability and configuration before testing replacements. See
+[network topology](network-topology.md) for the Mac adapter checks and
+proposed future validation.

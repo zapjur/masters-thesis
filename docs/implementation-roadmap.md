@@ -19,6 +19,10 @@ wire suites and all successful/failed raw attempts throughout.
 
 ## Phase 2 — Validate network topology
 
+The [topology feasibility report](network-topology.md) records the read-only
+inventory and proposed layout. Physical link and path verification remain open.
+
+
 - Objective: establish reproducible M4 → VNF/DUT → M1 traversal and monitoring access.
 - Prerequisites/dependencies: phase 1 host roles; existing inventory.
 - Tasks: inspect cables/adapters/three NICs, negotiated speeds, routing/MTU and switches;

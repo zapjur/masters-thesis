@@ -1038,3 +1038,15 @@ make differences explicit, and require deterministic concurrent/framing/deadline
 Request bodies, response status/framing, connection reuse and buffering decisions must
 match the selected backend workloads. See [l7-firewall.md](l7-firewall.md) and the
 [roadmap](implementation-roadmap.md). No implementation is authorized by this planning task.
+
+## D051 — Isolated wired data segments for Phase 2 validation
+
+**Status:** proposed
+
+Reserve the existing DUT LAN SSH path for management. Evaluate separate M4
+ingress and M1 egress Ethernet segments using the two spare DUT NICs. Prefer
+independent Linux bridges with one TAP/virtio interface each for KVM and
+host-network sockets for Wasmtime and Podman. Keep the external segments and
+endpoint addresses common across variants. Acceptance requires hardware
+verification, approved configuration and positive and negative path checks.
+See [network topology](network-topology.md) for the plan and alternatives.
