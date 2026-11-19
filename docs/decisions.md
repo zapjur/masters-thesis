@@ -1050,3 +1050,15 @@ host-network sockets for Wasmtime and Podman. Keep the external segments and
 endpoint addresses common across variants. Acceptance requires hardware
 verification, approved configuration and positive and negative path checks.
 See [network topology](network-topology.md) for the plan and alternatives.
+
+## D052 — Native deterministic synthetic HTTP backend
+
+**Status:** accepted for Phase 3
+
+Implement the D046 synthetic workload as a native macOS Rust service using
+Axum 0.8.6 and Tokio 1.48.0. Use HTTP/1.1 fixed-length readiness and echo
+responses, a bounded shared payload, and explicit listener configuration.
+Development can use loopback or the existing LAN. Readiness is an active HTTP
+probe. Schedule backend headroom measurement with the Phase 4 pilot.
+See the [backend contract](../backends/synthetic/README.md). D047 remains
+proposed for the Social Feed architecture and database controls.

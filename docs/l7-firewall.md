@@ -104,9 +104,9 @@ active state, and an open port are insufficient. Reset backend counters after pr
    including readiness, failures, cleanup, and immutable artifact collection.
 
 Implemented files include Rust under `implementations/firewall/` and Clojure checks
-under `mt/`. A controlled external backend under `backends/` remains future work. Container/VM
-functional assets under `infra/` exist under D039/D040; final benchmark adapters remain planned. No new service
-API is required beyond the restricted HTTP contract. Scenario schema must include
+under `mt/`. The [synthetic backend](../backends/synthetic/README.md) provides a
+compatible local upstream for valid bodyless GETs. Container and VM functional
+assets under `infra/` exist under D039/D040. Final benchmark adapters remain planned. Scenario schema must include
 policy, endpoints, limits, timeouts, environment, and source/artifact identities.
 
 ## Container baseline: Podman and Quadlet

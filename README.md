@@ -106,7 +106,9 @@ Clojure/Babashka mt controller, backend host and immutable artifact store. The M
 is dedicated to remotely supervised traffic generation. A Raspberry Pi of unspecified
 model is planned for monitoring; it is not documented as purchased or operational.
 Synthetic HTTP is the primary workload; a bounded Social Feed API adds realism.
-Rust/Axum/SQLite backends and Prometheus/Grafana monitoring remain preferred proposals.
+The [Rust synthetic backend](backends/synthetic/README.md) supports local HTTP/1.1
+development on macOS. The Social Feed stack and Prometheus/Grafana monitoring
+remain preferred proposals.
 AWS/EC2 may support development or auxiliary experiments, but is not the primary
 measurement environment.
 
@@ -121,7 +123,7 @@ active readiness probes, controlled resources, and immutable raw results.
 - [Podman/Quadlet correctness](docs/podman-correctness.md): container controls, shared-binary checks, and three-variant parity.
 - [VM correctness](docs/vm-correctness.md): 188/188 four-variant cases with exact response parity; functional evidence only.
 - [Implementation roadmap](docs/implementation-roadmap.md): gated phases, dependencies and acceptance criteria.
-- [HTTP workloads](docs/http-workloads.md): synthetic and Social Feed backend plans.
+- [HTTP workloads](docs/http-workloads.md): implemented synthetic backend and proposed Social Feed API.
 - [Monitoring](docs/monitoring.md): planned collectors, resource accounting and reliable exports.
 - [k6 evaluation](docs/k6-evaluation.md): proposed primary HTTP generator and pilot controls.
 - [L7 firewall milestone](docs/l7-firewall.md): proposed behavior, correctness cases, and implementation gates.

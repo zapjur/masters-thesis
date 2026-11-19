@@ -1,10 +1,8 @@
 # Implementation roadmap
 
-Documentation/planning only. Future implementation requires explicit user approval.
-Accepted host/strategy requirements and proposed stack/tool choices are distinguished in
-D042–D050. Phases are independently verifiable gates; no benchmark results are claimed.
-Artifacts below are expected future outputs, not files already present. Preserve existing
-wire suites and all successful/failed raw attempts throughout.
+Phases are independently verifiable gates. Decision statuses are recorded in the
+[decision log](decisions.md). Preserve existing wire suites and all successful and
+failed raw attempts throughout.
 
 ## Phase 1 — Finalize architecture and methodology
 
@@ -35,14 +33,18 @@ inventory and proposed layout. Physical link and path verification remain open.
 
 ## Phase 3 — Deterministic HTTP backend foundation
 
-- Objective: minimal reproducible synthetic backend on M1.
-- Prerequisites/dependencies: phases 1–2; D047 approval before new backend implementation.
-- Tasks: fixed bodies/status/sizes, optional delay, multiple instances, bounded HTTP contract,
-  version/config/hash capture and inexpensive diagnostics.
-- Acceptance: deterministic body/status tests and clean lifecycle; initial D038-compatible
-  mode verified; backend readiness and capacity measurable.
-- Artifacts: backend source/spec, functional evidence and build/version records.
-- Risks: framework framing defaults, logging/storage overhead, controller/backend contention.
+**Status:** complete for local development on the M1 Pro. Wire tests and native
+D038 forwarding passed. The existing LAN IP was tested from the same host.
+
+- Objective: minimal reproducible synthetic backend on the M1 Pro.
+- Scope: localhost and opt-in home LAN development under D052. Final Phase 2
+  topology is a campaign dependency.
+- Implementation: bounded deterministic responses, readiness endpoints and
+  concurrent requests across independently configured listeners.
+- Acceptance: deterministic wire responses, clean lifecycle, initial D038
+  compatibility, and interfaces for readiness and future capacity checks.
+- Artifacts: [source, contract and validation instructions](../backends/synthetic/README.md).
+- Capacity measurements and generator supervision are Phase 4 work.
 
 ## Phase 4 — k6 feasibility and headroom
 
