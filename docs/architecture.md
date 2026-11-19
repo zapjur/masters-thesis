@@ -3,8 +3,8 @@
 ## Status and authority
 
 D042–D050 record the revised design. Host responsibilities and the two-level HTTP
-strategy are accepted; backend stack, monitoring stack, and concurrency design remain
-proposals. Deployment is not implied. See [roadmap](implementation-roadmap.md),
+strategy are accepted. D052 selects the synthetic backend stack. Social Feed,
+monitoring, and concurrency designs remain proposals. See [roadmap](implementation-roadmap.md),
 [methodology](methodology.md), and [automation](experimental-framework.md).
 
 ## Physical hosts
@@ -63,7 +63,7 @@ The D038–D040 restricted firewall is functionally validated: 47 wire cases eac
 native, WASIp2, Podman and KVM, 188 total with exact client-response parity. See
 [original HTTP](firewall-correctness.md), [Podman](podman-correctness.md) and
 [VM evidence](vm-correctness.md). This proves neither concurrent-load feasibility nor
-performance. vLB, remote k6 campaigns, external backends and monitoring remain unimplemented.
+performance. The synthetic backend is implemented for local development. vLB, remote k6 campaigns, and monitoring remain unimplemented.
 
 ## Network topology validation gate
 

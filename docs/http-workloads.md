@@ -2,24 +2,24 @@
 
 ## Status
 
-Two levels are accepted (D046); Rust/Axum/SQLite is the preferred, proposed backend
-architecture (D047), replacing D021's future Clojure backend direction only if accepted.
-Existing Clojure wire fixtures stay intact. Backends are planned on the M1 Pro, outside
-the DUT. This study compares execution technologies, not backend languages/databases.
+Two workload levels are accepted (D046). D052 selects native Rust/Axum/Tokio for
+Level A. D047 remains proposed for the broader backend architecture and Social Feed.
+The M1 Pro hosts backends outside the DUT.
 
 ## Level A: synthetic HTTP
 
-Primary basis for isolating execution-environment differences: minimal processing,
-configurable fixed-size deterministic bodies and status codes, optional deterministic
-delay, and multiple independently addressed instances. Begin with bodyless HTTP/1.1
-requests and 200/Content-Length responses compatible with D038. Broader settings remain
-unavailable through the current firewall until validated. Retain config, body hashes,
-request/response byte sizes, delay, instance count and per-instance diagnostics.
+The [synthetic backend](../backends/synthetic/README.md) implements HTTP/1.1
+`GET /health`, `GET /ready`, and `GET /echo?size=N` with fixed-length bodies.
+Instances have independent addresses and can expose an instance identifier.
+Each instance shares one precomputed payload across requests. Successful
+bodyless GETs use the D038 contract. Response delay and additional configurable
+statuses remain outside this milestone.
 
-Measure sustainable HTTP RPS, latency distributions, CPU, memory, bytes/s, connection
-cost, startup and scaling. Use the reference paths in [methodology](methodology.md).
-A minimal deterministic Rust backend is the first implementation priority; Axum suitability
-for explicit framing and connection controls must be checked before choosing dependencies.
+Use the reference paths in [methodology](methodology.md) to measure sustainable
+HTTP RPS, latency, CPU, memory, bytes/s, connection cost, startup and scaling.
+Record configuration, body hashes, request/response sizes, instance count and
+per-instance diagnostics. Development sizes and bounds remain separate from
+the final benchmark matrix.
 
 ## Level B: Social Feed API
 
