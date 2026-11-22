@@ -1,0 +1,28 @@
+{
+  "schema": "Register",
+  "valid": {
+    "request_id": "019af11d-0000-7111-8111-111111111111",
+    "supported_minors": [
+      0
+    ],
+    "capabilities": [
+      {
+        "name": "traffic.k6",
+        "revision": 1
+      }
+    ]
+  },
+  "invalid": {
+    "request_id": "019af11d-0000-7111-8111-111111111111",
+    "supported_minors": [
+      0
+    ],
+    "capabilities": [
+      {
+        "name": "traffic.k6",
+        "revision": 1
+      }
+    ],
+    "agent_id": "untrusted"
+  }
+}

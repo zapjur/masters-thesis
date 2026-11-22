@@ -46,17 +46,109 @@ D038 forwarding passed. The existing LAN IP was tested from the same host.
 - Artifacts: [source, contract and validation instructions](../backends/synthetic/README.md).
 - Capacity measurements and generator supervision are Phase 4 work.
 
-## Phase 4 — k6 feasibility and headroom
+## Phase 3.5 — Distributed control plane architecture
 
-- Objective: validate generator remote-control contract and achievable offered load.
-- Prerequisites/dependencies: phases 2–3; D049 pilot plan; sufficient host diagnostics.
-- Tasks: pin k6/scripts, M1 → M4 supervision/recovery, open arrival-rate direct-backend
-  pilots and low-load restricted-firewall pilots; inspect errors, dropped iterations,
-  VUs, connection behavior and generator/backend utilization.
-- Acceptance: repeatable output retrieval including interruption; offered/achieved load
-  understood; headroom bounds recorded; final generator adoption decision supported.
-- Artifacts: pilot results, hashes, remote lifecycle evidence and capacity envelope.
-- Risks: generator limits, connection churn, output overhead, sequential firewall saturation.
+The accepted design and contract are documented in [control plane](control-plane.md)
+and [protocol v1](../protocol/v1/README.md). Phase 3.5 authorizes documentation;
+Phase 4 is implementation work. Phases 4A–4D use local addresses and fixtures and
+need neither the final Ethernet topology nor dedicated monitoring hardware.
+
+## Phase 4 — Distributed orchestration and k6 feasibility
+
+### Phase 4A — Controller Foundation
+
+- Prerequisites: Phase 3.5 decisions; verify Java 25 target and compatible JVM
+  dependencies locally before pinning.
+- Deliverables: JVM source root, Integrant lifecycle, configuration, SQLite WAL
+  migrations, pure transitions, single-writer coordinator, bounded virtual-thread
+  effects and authenticated loopback Management API. First management surface
+  exposes service health and operational status and accepts test commands only
+  through integration fixtures.
+- Acceptance: fresh and existing stores migrate safely, concurrent commands serialize,
+  saturated admission is bounded, failures are correlated and persisted, and
+  unauthenticated or non-loopback management requests cannot operate the service.
+- Risks: incompatible libraries or SQLite durability behavior; deadlock under saturation.
+- Validation: run the pinned local integration suite with a fresh temporary store,
+  replay migration against the prior schema fixture, saturate queue/effects with small
+  configured limits, restart against the same store and compare durable outcomes.
+
+Before implementing each corresponding endpoint in Phases 4B–4D, add shared
+positive and negative protocol fixtures under `protocol/v1/fixtures`. Both
+Clojure and Rust validation use those fixtures. Include request/response shapes
+and ordered exchanges for behavior that depends on prior messages.
+
+### Phase 4B — Agent Foundation
+
+- Prerequisites: 4A; verify Rust/TLS/schema library compatibility and pin versions.
+- Deliverables: native Rust skeleton, local certificate provisioning procedure,
+  authenticated Agent API, registration, capability negotiation, heartbeat and idle
+  long poll.
+- Acceptance: correct agent authenticates; bad server identity, untrusted client,
+  deactivated identity and unauthorized capabilities are rejected; heartbeats proceed
+  while a claim waits; agent needs only outbound connections.
+- Required fixtures before endpoints: valid and rejected registration, heartbeat
+  and claim, including duplicate requests, conflicting key reuse and stale sessions.
+- Risks: certificate mapping, TLS provider or incompatible decoders.
+- Validation: generate disposable test credentials outside Git, run both runtimes
+  on loopback, apply shared valid/invalid fixtures and identity cases, and record
+  observed heartbeat/poll behavior.
+
+### Phase 4C — Distributed Job Lifecycle
+
+- Prerequisites: 4B and durable state; harmless bounded test executor.
+- Deliverables: reservation, cancellation, typed dispatch, attempt/lease identities,
+  process ownership, persisted effects, recovery and reconciliation.
+- Acceptance: conflicts cannot dispatch, duplicate starts never spawn twice, lease
+  expiry and cancellation stop owned processes, and uncertainty retains reservations.
+- Required fixtures before endpoints or behavior changes: authorize-start and
+  terminal/reconcile exchanges, duplicate starts, stale sessions and attempts,
+  expiry and receipt pruning, reordered lease grants, and cancellation without renewal.
+- Risks: crash between spawn and journal update; delayed or reordered grants.
+- Validation: use local deterministic clocks and a bounded child process; inject
+  dropped replies, restart each side across launch/exit transitions, cut the control
+  connection, and verify child termination or durable recovery-required state.
+
+### Phase 4D — k6 Execution
+
+- Prerequisites: 4C; pin k6 binary and trusted synthetic workload after verification.
+- Deliverables: local k6 executor, supervised run and failure paths, machine-readable
+  results, bounded artifact upload, durable verified receipts and partial evidence.
+- Acceptance: local smoke run has matching spool/server hashes and valid results;
+  interruption retains partial files; retries do not overwrite; heartbeats remain
+  responsive while uploading.
+- Required fixtures before endpoints or behavior changes: k6 assignment with
+  omitted, valid and invalid VU ceilings; successful and interrupted uploads,
+  lost or duplicate durable acknowledgements, and conflicting artifact bytes.
+- Risks: k6 output growth, spool exhaustion and filesystem durability differences.
+- Validation: run against the local synthetic backend with small documented bounds;
+  interrupt processes/transfers and drop receipts; compare bytes and manifests after
+  retry or restart and measure control responsiveness.
+
+### Phase 4E — Direct-backend Pilot
+
+- Prerequisites: 4D, available M4/M1 hosts, Phase 3 backend and permitted LAN path.
+- Deliverables: remote M4→M1 pilot plan, pinned binaries/scripts, diagnostics and raw runs.
+- Acceptance: lifecycle and recovery work across hosts; reuse, offered/achieved rate,
+  dropped iterations, VUs and generator/backend/link constraints are characterized
+  for the tested path. Final headroom depends on validated data-network capacity.
+- Risks: shared or underspeed link, output overhead, generator or backend saturation.
+- Validation: record routes, link and environment provenance; repeat bounded open
+  arrival-rate runs with specified reuse and rates; compare errors, utilization and
+  throughput, and reproduce interruption and retrieval on a separate pilot run.
+
+### Phase 4F — Restricted-firewall Pilot
+
+- Prerequisites: 4E, preserved D038–D040 wire evidence, known permitted LAN path
+  via DUT and a supported restricted HTTP profile.
+- Deliverables: low-load M4→DUT→M1 pilots, allow/deny and body checks, supervision
+  evidence, and preliminary performance feasibility findings for Phase 5.
+- Acceptance: active readiness and path traversal verified, allowed/denied traffic
+  matches supported semantics, cleanup is scoped and reproducible, and bottlenecks
+  and limits are recorded. LAN observations alone cannot establish campaign readiness.
+- Risks: single-request connection churn, sequential VNF saturation or backend bypass.
+- Validation: replay the existing correctness commands independently; record explicit
+  endpoint/version/reuse settings, verify backend sees forwarded traffic and no
+  denied traffic, compare against 4E controls and preserve all pilot artifacts.
 
 ## Phase 5 — Firewall concurrency and HTTP compatibility
 

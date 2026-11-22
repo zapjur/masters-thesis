@@ -1,6 +1,6 @@
 # mt: Initial Feasibility Command
 
-The Clojure experiment controller currently implements `feasibility tcp` and `firewall check`,
+The Babashka CLI currently implements `feasibility tcp` and `firewall check`,
 using the existing controller Babashka (tested with 1.12.218). General `deploy`,
 `run`, metric collection, and analysis are not implemented yet. The HTTP correctness
 command optionally manages rootless Podman/Quadlet and transient KVM VM variants.
@@ -135,9 +135,8 @@ after changing editor configuration to clear findings from previously analyzed f
 
 ## Planned campaign host roles
 
-The M1 Pro is the primary mt controller, local backend host and central immutable artifact
-store (D042–D044). Future mt run campaigns will remotely supervise k6 on M4 Max, selected
-VNFs on the DUT and retrieve monitoring from the planned Raspberry Pi (model unspecified).
-These campaign interfaces are not implemented by the existing correctness commands.
-See [framework lifecycle](../docs/experimental-framework.md),
-[monitoring plan](../docs/monitoring.md) and [roadmap](../docs/implementation-roadmap.md).
+The M1 Pro hosts the planned JVM controller and central evidence store alongside
+the Babashka CLI and Rust backends. M4 Max runs the outbound k6 agent.
+See the [control plane architecture](../docs/control-plane.md) and
+[roadmap](../docs/implementation-roadmap.md). Existing commands above run
+independently of the future service.

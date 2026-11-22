@@ -78,3 +78,7 @@ design gates in [l7-firewall.md](l7-firewall.md). Chunked transfers, pipelining,
 HTTP/2, upgrades and production WAF/body inspection are optional or out of baseline scope;
 configure backends/generator to the agreed subset. Reuse parsing/forwarding infrastructure
 for vLB where feasible. No workload may silently depend on unsupported semantics.
+
+D060 selects native Rust for M1 Pro application backends. The Social Feed
+framework and storage controls remain subject to D047 verification. The
+[Phase 4 roadmap](implementation-roadmap.md) gates direct-backend and firewall pilots.

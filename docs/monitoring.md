@@ -66,3 +66,7 @@ export failures. Mark incomplete runs explicitly and retain all evidence; do not
 accept a run missing required resource metrics. Retry collection while data remains
 available, record retries, and stop further campaign runs if required monitoring cannot
 be restored. Optional diagnostic failure must not masquerade as required-metric success.
+
+The [control plane design](control-plane.md) places monitoring scrapes and
+controller exports on the management network. Phase 4A–4D validation uses
+local fixtures and can proceed before dedicated monitoring hardware is available.

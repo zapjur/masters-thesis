@@ -358,11 +358,10 @@ Separate machine, application, and experiment lifecycles avoid provisioning work
 
 ## D021 — Controlled backend services
 
-Revision note: D046 refines the workload strategy. D047 proposes replacing the planned
-Clojure application backend with Rust; that language change remains unaccepted. Existing
-Clojure correctness fixtures are preserved.
+Revision note: D046 refines the workload strategy. D060 supersedes the planned
+application-backend language recorded here. Existing Clojure correctness fixtures remain.
 
-**Status:** accepted
+**Status:** superseded by D046 and D060
 
 ### Decision
 
@@ -958,6 +957,8 @@ primary technology. Management is separate logically from measured HTTP traffic.
 
 ## D043 — M1 Pro as primary controller and artifact host
 
+D053 and D057 refine the controller runtime and operational storage.
+
 **Status:** accepted
 
 Run Clojure/Babashka mt, Ansible, configuration/metadata and immutable central artifact
@@ -967,6 +968,8 @@ defer expensive collection, and verify backend headroom. Supersedes prior M4 cen
 control/storage assignments without changing D019/D020 automation responsibilities.
 
 ## D044 — M4 Max as remote traffic generator
+
+D054–D055 define the agent-initiated transport for this host role.
 
 **Status:** accepted
 
@@ -998,13 +1001,15 @@ research objective to a backend-language/database comparison.
 
 ## D047 — Preferred Rust backend architecture
 
+D052 and D060 select the native Rust language baseline. The Social Feed stack
+and database details below remain proposed.
+
 **Status:** proposed
 
 Prefer a minimal deterministic Rust HTTP backend, then Rust/Axum/SQLite Social Feed API.
 Evaluate necessary endpoints, framing, SQLite WAL/contention/reset/seeding and per-instance
-isolation. Backend saturation must not dominate VNF comparisons. If accepted, this replaces
-D021's planned Clojure application-backend language; D021 remains historical and existing
-Clojure correctness fixtures/controller are retained. No dependency/version is selected or
+isolation. Backend saturation must not dominate VNF comparisons. D060 supersedes D021’s planned application-backend language. Existing Clojure
+correctness fixtures and Clojure orchestration are retained. No dependency/version is selected or
 installed here. Approval and compatibility/capacity validation precede implementation.
 
 ## D048 — Preferred Prometheus/Grafana monitoring
@@ -1062,3 +1067,73 @@ Development can use loopback or the existing LAN. Readiness is an active HTTP
 probe. Schedule backend headroom measurement with the Phase 4 pilot.
 See the [backend contract](../backends/synthetic/README.md). D047 remains
 proposed for the Social Feed architecture and database controls.
+
+## D053 — Babashka CLI and JVM controller
+
+**Status:** accepted
+
+Retain the Babashka CLI. Run a long-lived Clojure modular monolith on M1 Pro,
+targeting Java 25 LTS subject to toolchain verification. This refines D019 and
+D043; Babashka remains the CLI and functional tooling runtime.
+
+## D054 — Native agent and first typed capability
+
+**Status:** accepted
+
+Run a native Rust agent on M4 Max with initial capability `traffic.k6` and an
+extension interface. Ordinary execution is unprivileged and outbound-only.
+This selects the Phase 4 k6 integration; final tool adoption remains subject
+to D041/D049 pilots. No future executor is authorized here.
+
+## D055 — Agent REST/JSON and authentication
+
+**Status:** accepted
+
+Use versioned REST/JSON with long polling, independent heartbeats and mandatory
+mTLS with a private CA and individual certificates. Supersedes the M4 inbound
+SSH/supervisor proposal; refines D044. Keep D020 DUT SSH/Ansible and runtime
+lifecycles. Exclude gRPC, WebSockets, brokers, consensus and microservices.
+
+## D056 — Separate local management interface
+
+**Status:** accepted
+
+Use a separate configurable loopback HTTP listener with local authentication
+for CLI commands. Restrict the agent listener to explicitly configured management
+addresses. See [security](control-plane-security.md).
+
+## D057 — SQLite operational state and immutable files
+
+**Status:** accepted
+
+Use SQLite WAL for operational state and the M1 filesystem for immutable
+research evidence under D024. Acknowledge evidence only after durable file and
+metadata publication. See [persistence](control-plane-persistence.md).
+
+## D058 — Serialized transitions and bounded concurrent effects
+
+**Status:** accepted
+
+Use Functional Core, Imperative Shell, a single-writer coordinator, a bounded
+event queue and bounded concurrent external effects on JVM virtual threads.
+Persist transition and effect intent before execution outside the transaction.
+Verify preferred dependencies and operational limits during implementation.
+
+## D059 — Reservation scheduler and declarative plans
+
+**Status:** accepted
+
+Keep EDN under D019. Freeze deterministic seeded campaign plans and use a queue
+with atomic exclusive reservations. Allow at most one measured run on the DUT.
+Hold uncertain resources through verified recovery and never replay an ambiguous
+measurement. New measurement attempts have new run IDs. Exclude a generic
+workflow engine. See [execution lifecycle](control-plane-domain.md).
+
+## D060 — Native Rust backends on M1 Pro
+
+**Status:** accepted
+
+Supersedes D021's planned application-backend language and accepts the Rust
+language portion of D047, consistent with the implemented D052 synthetic backend.
+Retain Clojure correctness fixtures. Social Feed framework, database and workload
+implementation details remain proposed under D047.
