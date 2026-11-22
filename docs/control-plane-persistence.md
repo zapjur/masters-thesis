@@ -7,6 +7,30 @@ Agents own separate bounded local journals/spools. Keep live SQLite off network
 filesystems. Back up operational state and referenced evidence under a documented
 consistent procedure. Configure durable commit and verify platform guarantees.
 
+## Implemented in Phase 4A
+
+The local controller verifies WAL, foreign keys, `synchronous=FULL`,
+`fullfsync=ON` and a 250 ms busy timeout on its SQLite connection. A
+database-specific OS file lock is held for the connection's lifetime. Keep its
+ownership sidecar in the private data directory between starts.
+
+Migration 001 creates a singleton `operational_state` row, append-only
+`execution_events`, and `effect_intents` rows with foreign keys to their creation
+and latest event. The `schema_migrations` table stores ordered versions and SQL
+resource checksums. Startup applies and records pending migrations transactionally.
+A newer, unfamiliar, or checksum-mismatched schema fails startup. There is no
+historical Phase 4A migration before version 001. Add future versions as new
+resources and test them on copies of the previous store format.
+
+A fixture command commits the aggregate state, correlated event and pending
+intent together. The coordinator commits the transition to active before launch
+and commits the eventual outcome through the same transaction path. Status
+uses the committed snapshot. Startup moves previous active effects to uncertain
+and runs pending idempotent fixtures. The SQL state and event history are
+operational data. Future migrations add the typed relationships below as their
+lifecycles are implemented. Host power-loss durability and a production backup
+and restore procedure still require verification.
+
 ## Conceptual schema and commit boundaries
 
 | Records | Relationship and constraints |

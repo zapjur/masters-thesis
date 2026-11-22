@@ -1,12 +1,17 @@
 # Distributed experiment control plane
 
-Phase 3.5 defines the target design. The implemented entry points remain
-`mt feasibility tcp` and `mt firewall check` (including Quadlet and KVM options).
-They stage pinned source/tools over SSH, exercise DUT loopback fixtures, collect
-run-owned evidence and perform scoped cleanup. KVM's functional adapter uses
-SLIRP forwarding. The synthetic Rust backend has local development evidence.
-There is currently no campaign engine, controller service, native agent, remote
-k6 pilot, or deployed monitoring stack.
+Phase 3.5 defines the target design. Phase 4A implements the local JVM controller
+foundation on M1 Pro. It provides authenticated loopback health and status, a
+SQLite operational store, a single state writer and bounded fixture effects.
+See the [controller guide](../mt/controller/README.md) for the executable
+configuration and limits. Campaign execution, native agents, remote k6 pilots
+and deployed monitoring remain planned.
+
+The functional `mt feasibility tcp` and `mt firewall check` entry points,
+including Quadlet and KVM options, stage pinned source/tools over SSH, exercise
+DUT loopback fixtures, collect run-owned evidence and perform scoped cleanup.
+KVM's functional adapter uses SLIRP forwarding. The synthetic Rust backend has
+local development evidence.
 
 ## Deployment and boundaries
 
@@ -47,11 +52,12 @@ effect intents together before exposing success. A read snapshot is a cache of
 committed state. SQLite is authoritative. External effects execute after commit
 and report outcomes back through the coordinator. See [persistence](control-plane-persistence.md).
 
-Target Java 25 LTS subject to compatibility verification. Preferred stack is Clojure
+Phase 4A uses Java 25 LTS on Apple Silicon. The controller stack is Clojure
 on JVM with deps.edn, Integrant lifecycle, Malli boundary validation, Ring/Jetty,
 Reitit, Java BlockingQueue, virtual-thread executors, next.jdbc and SQLite JDBC in
-WAL mode. Verify platform, driver, schema tooling, TLS and shutdown compatibility
-and pin tested versions in Phase 4. Exclude gRPC, WebSockets, brokers, consensus,
+WAL mode. The Phase 4A implementation pins and exercises the local JVM stack.
+Agent TLS and wider deployment compatibility remain Phase 4 work. Exclude
+gRPC, WebSockets, brokers, consensus,
 microservices and generic workflow/DAG scheduling.
 
 Use bounded event admission with capacity reserved for effect outcomes and urgent
@@ -90,7 +96,7 @@ idle CPU, process memory and artifact volume on target hosts.
 
 - Keep `mt/bin/mt`, `mt/bb.edn`, `mt/src` and existing tests and fixtures. Existing
   local commands retain their entry points and evidence layout.
-- Add `mt/deps.edn`, `mt/controller/src` and `mt/controller/resources` for JVM-only
+- Phase 4A adds `mt/deps.edn`, `mt/controller/src` and `mt/controller/resources` for JVM-only
   source and migrations. Put new portable code under `mt/shared/src` only when
   consumed by both runtimes. Never put JVM-only deps on the Babashka classpath.
 - Add the Rust crate under `agents/mt-agent` when implementing it. Keep shared
@@ -120,7 +126,7 @@ and the [implementation roadmap](implementation-roadmap.md).
   reconciliation, and preservation of incomplete measurements. Inspect both storage
   and process state, including lost or absent artifacts.
 
-Exact compatibility pins, Management API campaign DTOs, EDN schema and randomization
+Management API campaign DTOs, EDN schema and randomization
 algorithm, retry and admission budgets, process-group crash containment on macOS,
 SQLite/filesystem durability and backup procedures, and generator workload settings
 remain implementation or pilot work. Final network, monitoring hardware, headroom,

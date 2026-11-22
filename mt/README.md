@@ -111,7 +111,15 @@ same 47 cases per variant, checks response parity, and verifies interruption cle
 It exports the OCI image and retains unit/container metadata and logs. No sudo is
 used during cases; no boot autostart, lingering, or network/firewall change is added.
 
-## Controller checks
+## Local JVM controller
+
+`mt controller start --config PATH` starts the Java 25 controller in the foreground.
+`mt controller status --config PATH` queries the authenticated loopback API from
+Babashka. Stop the foreground service with Ctrl-C or SIGTERM. See the
+[controller guide](controller/README.md) for private credential setup, configuration,
+API details, and JVM tests.
+
+## Babashka checks
 
 ```sh
 bb test

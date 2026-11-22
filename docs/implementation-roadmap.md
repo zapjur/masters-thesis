@@ -57,6 +57,13 @@ need neither the final Ethernet topology nor dedicated monitoring hardware.
 
 ### Phase 4A — Controller Foundation
 
+- Status: local acceptance met on Apple M1 Pro with Java 25. The controller
+  integration suite passed 8 tests and 67 assertions, and the existing Babashka
+  suite passed 19 tests and 64 assertions. A foreground CLI smoke test verified
+  authenticated status, rejection of absent and incorrect credentials, migration
+  001, cross-process store ownership, SIGTERM shutdown and reopening the same
+  store. The integration suite covered command serialization, outcome delivery under saturation,
+  failures, cancellation, and restart with pending and uncertain work.
 - Prerequisites: Phase 3.5 decisions; verify Java 25 target and compatible JVM
   dependencies locally before pinning.
 - Deliverables: JVM source root, Integrant lifecycle, configuration, SQLite WAL
@@ -68,9 +75,11 @@ need neither the final Ethernet topology nor dedicated monitoring hardware.
   saturated admission is bounded, failures are correlated and persisted, and
   unauthenticated or non-loopback management requests cannot operate the service.
 - Risks: incompatible libraries or SQLite durability behavior; deadlock under saturation.
-- Validation: run the pinned local integration suite with a fresh temporary store,
-  replay migration against the prior schema fixture, saturate queue/effects with small
-  configured limits, restart against the same store and compare durable outcomes.
+- Reproduction: run the pinned local integration suite with a fresh temporary
+  store, reopen an existing migration-001 store, saturate queue/effects with small
+  configured limits, and compare durable outcomes after restart. Future
+  migrations need a prior-version store fixture. See the
+  [controller guide](../mt/controller/README.md).
 
 Before implementing each corresponding endpoint in Phases 4B–4D, add shared
 positive and negative protocol fixtures under `protocol/v1/fixtures`. Both

@@ -102,7 +102,7 @@ validation. Rust is not assumed to be universally the fastest WebAssembly langua
 
 All technologies run on the same bare-metal i5-12400 desktop (16 GB RAM, SSD), with
 verified AlmaLinux 10.2 and three RTL8125 NICs. The M1 Pro (32 GB) is the primary
-Babashka CLI, planned JVM controller, native Rust backends and central artifact store. The M4 Max
+Babashka CLI, Phase 4A JVM controller, native Rust backends and central artifact store. The M4 Max
 is dedicated to traffic generation through a planned outbound Rust agent. A Raspberry Pi of unspecified
 model is planned for monitoring; it is not documented as purchased or operational.
 Synthetic HTTP is the primary workload; a bounded Social Feed API adds realism.
@@ -165,4 +165,8 @@ proposals. See the roadmap for approval and validation gates; no performance cam
 or monitoring deployment is claimed.
 
 D053–D060 define the accepted control plane design and protocol for Phase 4.
-The controller and agent are pending implementation.
+Phase 4A adds the local JVM controller foundation, SQLite recovery, and an
+authenticated loopback Management API. Use `mt controller start --config PATH`
+and `mt controller status --config PATH`. See the
+[controller guide](mt/controller/README.md) for Java 25, credential setup, and
+verification. The Agent API and distributed experiment execution remain planned.

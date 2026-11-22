@@ -1,0 +1,11 @@
+{:host "127.0.0.1"
+ :port 8765
+ :data-dir "/absolute/path/to/private/controller-data"
+ :database "controller.sqlite"
+ :credential-file "/absolute/path/to/private/controller-token"
+ :queue-capacity 32
+ :reserved-capacity 5
+ :effect-concurrency 4
+ :command-timeout-ms 1000
+ :effect-timeout-ms 2000
+ :shutdown-timeout-ms 3000}

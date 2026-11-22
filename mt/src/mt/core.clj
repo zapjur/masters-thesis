@@ -96,6 +96,8 @@
        "Commands:\n"
        "  feasibility tcp   Check shared native/WASIp2 TCP forwarding\n"
        "  firewall check    Check the shared HTTP firewall\n\n"
+       "  controller start --config PATH   Start the JVM controller in the foreground\n"
+       "  controller status --config PATH  Query the local Management API\n"
        "Options:\n"
        "  --ssh-host ALIAS   Existing OpenSSH alias for the DUT\n"
        "  --remote-root DIR  Prepared DUT directory (default: /tmp/mt-tcp-feasibility)\n"
@@ -108,4 +110,6 @@
     (or (empty? args) (= args ["--help"]) (= args ["-h"]) (= args ["help"])) (println usage)
     (= (take 2 args) ["feasibility" "tcp"]) (feasibility! (drop 2 args))
     (= (take 2 args) ["firewall" "check"]) ((requiring-resolve 'mt.firewall/check!) (drop 2 args))
+    (= (take 2 args) ["controller" "start"]) ((requiring-resolve 'mt.controller-cli/start!) repo (drop 2 args))
+    (= (take 2 args) ["controller" "status"]) ((requiring-resolve 'mt.controller-cli/status!) (drop 2 args))
     :else (throw (ex-info usage {}))))

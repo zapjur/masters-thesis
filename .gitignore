@@ -59,3 +59,6 @@ experiments/local/
 
 # Analysis notebooks
 .ipynb_checkpoints/
+
+# Clojure CLI project cache
+.cpcache/
