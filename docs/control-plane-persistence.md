@@ -31,6 +31,43 @@ SQL. Commit effect outcomes through the same coordinator. Pending safe idempoten
 effects can be redispatched. In-flight side effects are uncertain across crashes
 until checked against run-owned evidence. Never blindly replay process starts.
 
+## Bounded request receipts
+
+Scope POST receipt keys to the enrolled agent and fingerprint the operation,
+path, session (when applicable), and canonical body. Commit the receipt with
+the mutation. Deduplicate concurrent in-flight requests as well, including a
+long poll, and give admitted requests bounded processing deadlines.
+
+Publish a configured retry window and maximum future clock skew. Size the
+window to exceed the longest admitted request plus its supported lost-response
+retry budget, including long-poll time and skew. Clients reuse the original
+UUIDv7 and retry within that budget. Check the timestamp at admission and again
+before committing a delayed request. Reject expired IDs and excessive future
+skew with structured errors. Persist a nondecreasing expiry cutoff in SQLite
+before or in the same transaction as deleting receipts. Apply it across
+restart and clock rollback, so a pruned request ID never becomes eligible
+again. Reject requests when clock uncertainty prevents safe admission. Exact
+window and skew values need Phase 4 verification. A configuration change that
+shortens retention must honor the previous retry window for already admitted
+requests. Recheck session and attempt authority at commit for delayed work.
+
+Prune expired receipts in bounded batches. Rate-limit admitted distinct
+requests per agent and globally, budget for the peak admitted rate across
+the full retention interval including skew, and apply backpressure before
+capacity is exhausted. Reserve admission capacity for heartbeats and
+cancellation. Keep compact heartbeat replies and never evict an in-window
+receipt to make room. Keep authoritative session fencing, lease sequence
+and expiry, cancellation, process outcomes and reservations independently
+of receipt rows. Check enrollment and session currency even when a receipt
+exists. Replayed grants retain their original sequence and deadline and
+cannot restart or extend expired authority.
+
+Durable artifact metadata backs identical PUT acknowledgement replay for
+authorized callers independently of POST receipt pruning. Preserve run
+manifests, artifact hashes and research-relevant lifecycle events and
+outcomes independently of operational receipts. Heartbeat receipt traffic
+does not itself constitute research evidence.
+
 ## Filesystem evidence
 
 Use unique run directories under a configurable central root. Include resolved EDN

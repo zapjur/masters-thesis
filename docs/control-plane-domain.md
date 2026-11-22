@@ -31,7 +31,7 @@ rates, payload sizes and durations remain development parameters.
 | Attempt | assigned → start-authorized → running → exited → reported | Assigned may be closed as unstarted only with proof (e.g. no start authorization committed). Cancellation after authorization → stopping → exited; ambiguous launch/exit → recovery-required → exited or verified no-start. Reported is terminal and records success, failure or cancellation. A pre-start rejection can be reported without an exit. |
 | Agent | enrolled/offline → online on authenticated registration/reconciliation; online → suspect on missed heartbeats → offline on timeout | Suspect/offline → online through authenticated contact and reconciliation. Any availability state → deactivated by operator; re-enable only by explicit enrollment action. |
 
-`started` grants start authority before spawn; running means evidence of process
+`authorize-start` grants start authority before spawn; running means evidence of process
 launch or execution, not simply authority. Terminal process outcome and research
 validity are separate. Completion requires verified stop/cleanup and required
 durable artifacts; failures preserve completeness gaps. Recovery cannot convert an

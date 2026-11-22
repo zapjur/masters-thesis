@@ -118,12 +118,12 @@
         }
       }
     },
-    "/api/v1/jobs/{id}/started": {
+    "/api/v1/jobs/{id}/authorize-start": {
       "post": {
         "operationId": "authorizeStart",
         "description": "Record intent and grant authority before process spawn.",
         "parameters": [{"name": "id","in": "path","required": true,"schema": {"$ref": "./schemas.json#/$defs/Id"}}],
-        "requestBody": {"required": true,"content": {"application/json": {"schema": {"$ref": "./schemas.json#/$defs/Started"}}}},
+        "requestBody": {"required": true,"content": {"application/json": {"schema": {"$ref": "./schemas.json#/$defs/AuthorizeStart"}}}},
         "responses": {
           "200": {
             "description": "Committed reply",

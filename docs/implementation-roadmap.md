@@ -72,6 +72,11 @@ need neither the final Ethernet topology nor dedicated monitoring hardware.
   replay migration against the prior schema fixture, saturate queue/effects with small
   configured limits, restart against the same store and compare durable outcomes.
 
+Before implementing each corresponding endpoint in Phases 4B–4D, add shared
+positive and negative protocol fixtures under `protocol/v1/fixtures`. Both
+Clojure and Rust validation use those fixtures. Include request/response shapes
+and ordered exchanges for behavior that depends on prior messages.
+
 ### Phase 4B — Agent Foundation
 
 - Prerequisites: 4A; verify Rust/TLS/schema library compatibility and pin versions.
@@ -81,6 +86,8 @@ need neither the final Ethernet topology nor dedicated monitoring hardware.
 - Acceptance: correct agent authenticates; bad server identity, untrusted client,
   deactivated identity and unauthorized capabilities are rejected; heartbeats proceed
   while a claim waits; agent needs only outbound connections.
+- Required fixtures before endpoints: valid and rejected registration, heartbeat
+  and claim, including duplicate requests, conflicting key reuse and stale sessions.
 - Risks: certificate mapping, TLS provider or incompatible decoders.
 - Validation: generate disposable test credentials outside Git, run both runtimes
   on loopback, apply shared valid/invalid fixtures and identity cases, and record
@@ -93,6 +100,9 @@ need neither the final Ethernet topology nor dedicated monitoring hardware.
   process ownership, persisted effects, recovery and reconciliation.
 - Acceptance: conflicts cannot dispatch, duplicate starts never spawn twice, lease
   expiry and cancellation stop owned processes, and uncertainty retains reservations.
+- Required fixtures before endpoints or behavior changes: authorize-start and
+  terminal/reconcile exchanges, duplicate starts, stale sessions and attempts,
+  expiry and receipt pruning, reordered lease grants, and cancellation without renewal.
 - Risks: crash between spawn and journal update; delayed or reordered grants.
 - Validation: use local deterministic clocks and a bounded child process; inject
   dropped replies, restart each side across launch/exit transitions, cut the control
@@ -106,6 +116,9 @@ need neither the final Ethernet topology nor dedicated monitoring hardware.
 - Acceptance: local smoke run has matching spool/server hashes and valid results;
   interruption retains partial files; retries do not overwrite; heartbeats remain
   responsive while uploading.
+- Required fixtures before endpoints or behavior changes: k6 assignment with
+  omitted, valid and invalid VU ceilings; successful and interrupted uploads,
+  lost or duplicate durable acknowledgements, and conflicting artifact bytes.
 - Risks: k6 output growth, spool exhaustion and filesystem durability differences.
 - Validation: run against the local synthetic backend with small documented bounds;
   interrupt processes/transfers and drop receipts; compare bytes and manifests after

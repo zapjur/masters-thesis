@@ -12,9 +12,12 @@ Incomplete evidence lists missing names separately. A process state reported by
 an agent is evidence to reconcile alongside controller history.
 
 The registration fixture contains a valid shape and an invalid identity override.
-In Phase 4 both Clojure and Rust tests should load the same fixtures, validate them
-against their named schema definitions, and compare strict decoding and serialization.
+Use a matching test clock for its fixed UUIDv7 timestamp in endpoint tests.
+Before implementing each endpoint or protocol behavior in Phases 4B–4D, add
+shared positive and negative fixtures. Both Clojure and Rust tests validate them against
+the named schemas and compare strict decoding and serialization.
 Extend fixtures for every endpoint, boundary, unknown field and protocol version.
 Loopback integration tests should also exchange actual requests under mTLS and
-replay stale, duplicate, interrupted and reordered messages. The test-only bounded
+replay duplicate requests, stale sessions, reordered grants, cancellation and
+artifact acknowledgement exchanges. The test-only bounded
 executor uses a test configuration and does not extend the production v1 capabilities.
