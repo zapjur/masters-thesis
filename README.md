@@ -102,8 +102,8 @@ validation. Rust is not assumed to be universally the fastest WebAssembly langua
 
 All technologies run on the same bare-metal i5-12400 desktop (16 GB RAM, SSD), with
 verified AlmaLinux 10.2 and three RTL8125 NICs. The M1 Pro (32 GB) is the primary
-Clojure/Babashka mt controller, backend host and immutable artifact store. The M4 Max
-is dedicated to remotely supervised traffic generation. A Raspberry Pi of unspecified
+Babashka CLI, planned JVM controller, native Rust backends and central artifact store. The M4 Max
+is dedicated to traffic generation through a planned outbound Rust agent. A Raspberry Pi of unspecified
 model is planned for monitoring; it is not documented as purchased or operational.
 Synthetic HTTP is the primary workload; a bounded Social Feed API adds realism.
 The [Rust synthetic backend](backends/synthetic/README.md) supports local HTTP/1.1
@@ -122,6 +122,7 @@ active readiness probes, controlled resources, and immutable raw results.
 - [HTTP firewall correctness](docs/firewall-correctness.md): implementation, 94 DUT checks, reproduction, and limits.
 - [Podman/Quadlet correctness](docs/podman-correctness.md): container controls, shared-binary checks, and three-variant parity.
 - [VM correctness](docs/vm-correctness.md): 188/188 four-variant cases with exact response parity; functional evidence only.
+- [Control plane architecture](docs/control-plane.md)
 - [Implementation roadmap](docs/implementation-roadmap.md): gated phases, dependencies and acceptance criteria.
 - [HTTP workloads](docs/http-workloads.md): implemented synthetic backend and proposed Social Feed API.
 - [Monitoring](docs/monitoring.md): planned collectors, resource accounting and reliable exports.
@@ -162,3 +163,6 @@ No illustrative values constitute final methodology.
 D042–D050 record revised host roles, accepted two-level workloads and conditional stack/tool
 proposals. See the roadmap for approval and validation gates; no performance campaign
 or monitoring deployment is claimed.
+
+D053–D060 define the accepted control plane design and protocol for Phase 4.
+The controller and agent are pending implementation.

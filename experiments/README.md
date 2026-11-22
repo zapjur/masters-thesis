@@ -11,30 +11,11 @@ preferably randomized/interleaved blocks; avoid grouped fixed technology order.
 See [experimental-framework.md](../docs/experimental-framework.md) for CLI, adapters, and
 lifecycle, and [methodology.md](../docs/methodology.md) for scientific controls.
 
-## Intended future result structure
+## Planned campaign evidence
 
-```text
-experiments/
-├── scenarios/
-├── runs/
-│   └── <campaign>/
-│       └── <experiment-id>/
-│           ├── metadata.edn
-│           ├── traffic.*
-│           ├── cpu.csv
-│           ├── memory.csv
-│           ├── latency.*
-│           ├── stdout.log
-│           └── stderr.log
-├── processed/
-└── figures/
-```
-
-This is a proposed storage layout, not created directories or a finalized schema.
-Raw run output/logs/metadata are immutable; processed summaries and figures are separate.
-Analysis must never overwrite measurements. Preserve failed/incomplete runs with status
-and reasons. Record Git commit, environment/source versions, resolved scenario, resource
-allocation, traffic parameters, durations, ordering, and repetition for every run.
+The [persistence design](../docs/control-plane-persistence.md) defines immutable
+run storage, manifests and partial evidence. Existing correctness evidence under
+`experiments/local/` retains its current layout. Analysis output stays separate.
 
 ## Values still provisional
 

@@ -10,7 +10,7 @@ provides request-level metrics, response checks, scenario scheduling, and machin
 readable outputs. Keep the Clojure raw-wire correctness fixtures: an HTTP client
 API is not a substitute for constructing malformed requests and ambiguous framing.
 
-Before acceptance, automate a pilot through mt and record:
+For final generator adoption, automate the [Phase 4E–4F pilots](implementation-roadmap.md) through mt and record:
 
 - The pinned k6 binary/version/hash and traffic script/configuration hashes.
 - One HTTP request per iteration, explicit connection reuse, redirects, timeout,
@@ -68,10 +68,9 @@ new-connection cost; they do not model a persistent-connection proxy.
 
 ## Remote execution and artifacts
 
-The [framework](experimental-framework.md) owns the planned SSH/supervisor contract.
-M1 initiates and supervises M4 execution and retrieves exact commands/parameters, process
-exit status, stdout/stderr, k6 summary, appropriate raw outputs, start/end times and
-scenario versions. Preserve all under run_id on M1, including failed or interrupted runs.
+The [native agent](control-plane.md) initiates outbound mTLS, claims typed k6
+jobs and supervises the configured local binary. M1 records resolved arguments,
+process status, logs, summaries, raw output, timings and scenario versions. Preserve all under run_id on M1, including failed or interrupted runs.
 Run correctness fixtures separately: k6 does not replace Clojure malformed-wire tests.
 Final adoption still depends on direct-backend and through-VNF pilots, physical network
 validation, achieved-load fidelity and generator/backend headroom. No k6 pilot has been

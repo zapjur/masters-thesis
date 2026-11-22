@@ -125,8 +125,8 @@ bare-metal x86 Linux DUT; AlmaLinux 10.2 is the verified installed OS and curren
 M4 generator, common DUT and planned monitoring host (Raspberry Pi model unspecified).
 
 Clojure `mt` with EDN scenarios automates execution; Ansible configures hosts. Controlled
-Clojure correctness fixtures remain. D047 proposes Rust/Axum/SQLite application backends
-outside the DUT. Synthetic HTTP and complementary Social Feed workloads are defined in
+Clojure correctness fixtures remain. D060 selects native Rust application backends outside the DUT. D047's Social
+Feed stack and database controls remain proposed. Synthetic HTTP and complementary Social Feed workloads are defined in
 [http-workloads.md](http-workloads.md).
 AWS/EC2 may support development, CI, functional/reproducibility tests, or auxiliary
 experiments, but not the primary final measurements without a new justified decision.

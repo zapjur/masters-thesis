@@ -2,7 +2,7 @@
 
 ## Status and authority
 
-D042–D050 record the revised design. Host responsibilities and the two-level HTTP
+D042–D060 record the revised design. Host responsibilities and the two-level HTTP
 strategy are accepted. D052 selects the synthetic backend stack. Social Feed,
 monitoring, and concurrency designs remain proposals. See [roadmap](implementation-roadmap.md),
 [methodology](methodology.md), and [automation](experimental-framework.md).
@@ -11,13 +11,12 @@ monitoring, and concurrency designs remain proposals. See [roadmap](implementati
 
 | Host | Role | Responsibilities and controls |
 | --- | --- | --- |
-| A: MacBook Pro M1 Pro, 32 GB RAM, macOS | Primary controller, backends, central storage | Clojure/Babashka `mt`, EDN configuration/metadata, Ansible, appropriate builds/deployment, local synthetic and Social Feed backends, multiple backend instances, immutable raw artifacts, remote generator supervision, Prometheus retrieval |
-| B: MacBook Pro M4 Max, macOS | Dedicated traffic generator | Remote Grafana k6 scenarios, request metrics, diagnostics and export to A; no main orchestrator, backend, or central storage during campaigns |
+| A: MacBook Pro M1 Pro, 32 GB RAM, macOS | Primary controller, backends, central storage | Babashka CLI, JVM controller, EDN, Ansible, SQLite, native Rust backends, immutable raw artifacts and Prometheus retrieval |
+| B: MacBook Pro M4 Max, macOS | Dedicated traffic generator | Native outbound-only Rust agent, local k6 and temporary evidence spool; no main orchestrator, backend, or central storage during campaigns |
 | C: Intel Core i5-12400, 16 GB RAM, SSD, AlmaLinux 10.2 | Common bare-metal DUT | Selected Rust vFW/vLB, Wasmtime/WASIp2 or Podman/Quadlet or QEMU/KVM/libvirt; controlled CPU/memory, exporters, reproducible deployment and scoped cleanup |
 | D: Raspberry Pi, model and purchase undecided | Planned monitoring/infrastructure | Preferred Prometheus/Grafana, time-series storage and run exports; ARM64 Linux compatibility to verify on chosen hardware; portable to another Linux host |
 
-The controller and backend are distinct logical roles on physical host A. All central
-management originates there. Finish builds, preparation and deployment before measured
+The controller and backend are distinct logical roles on physical host A. See [control and execution planes](control-plane.md). Finish builds, preparation and deployment before measured
 traffic; defer expensive retrieval/compression until afterward. Measure backend CPU,
 memory, storage and network headroom, including contention with controller activity.
 B must retain generator headroom; its execution interface must allow another compatible
@@ -34,7 +33,8 @@ campaigns. Monitoring resource consumption stays outside the VNF host except exp
 ## Logical paths
 
 ```text
-M1 Pro: mt controller --management--> M4 Max, DUT, monitoring host
+M4 Max: agent --management HTTPS/mTLS--> M1 Pro controller
+M1 Pro: controller --management SSH--> DUT
          | local supervision
          v
 M1 Pro: backend processes and immutable artifact storage
@@ -48,8 +48,7 @@ M1 Pro / mt --post-run query/export--> Prometheus
 Grafana reads Prometheus for inspection; dashboards are not raw evidence.
 ```
 
-Only one selected environment is measured at a time unless an explicit scaling scenario
-specifies otherwise. Native Rust outside a container/VM is a reference and correctness
+The DUT serves at most one measured run at a time, including scaling runs. Native Rust outside a container/VM is a reference and correctness
 control, not a fourth primary technology.
 
 ## Execution and evidence

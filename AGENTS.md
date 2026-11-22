@@ -191,15 +191,17 @@ Avoid calling WebAssembly itself a virtual machine unless discussing a specific 
   i5-12400, 16 GB RAM, SSD. AlmaLinux 10.2 and the i5-12400 hardware are verified and accepted (D034).
   Three RTL8125 NICs are verified; data-link topology remains unresolved.
   See docs/dut-inventory.md for observed kernel, link speeds, and software state.
-- MacBook M4 Max generates traffic, runs the orchestrator, and collects final artifacts.
-  MacBook M1 Pro runs backends/receivers. Neither Mac is a primary DUT.
+- M4 Max generates traffic with the planned native Rust agent and k6; M1 Pro
+  hosts the CLI, planned JVM controller, operational SQLite, central artifacts and
+  native Rust backends (D042–D060). Raspberry Pi monitoring is planned. Neither Mac
+  is a primary DUT. See docs/control-plane.md and docs/network-topology.md.
 - Layer 7 is the current workload direction: firewall first, then load balancer.
   The first HTTP/1.1 firewall subset uses shared Rust/httparse and WASIp2 sockets
   (D038). Final concurrency, deployment paths, and benchmark settings remain open.
 - Clojure is used for `mt` (master-thesis); EDN defines experiment scenarios.
 - Ansible configures/provisions hosts. `mt deploy` deploys applications/artifacts;
   `mt run` manages experiment lifecycles. Ansible is not the per-benchmark engine.
-- Backend services may be written in Clojure on the M1 Pro. The primary vLB scenario
+- Application backends use native Rust on M1 Pro (D060). The primary vLB scenario
   uses a configurable service in `minimal` mode, outside the DUT.
 - Final measurements use the controlled bare-metal DUT. AWS/EC2 is auxiliary only
   unless evidence and an explicit decision justify changing this baseline.
@@ -238,8 +240,9 @@ infra/containers/podman.lock.json. Resource guards are not final benchmark alloc
 Cleanup must clear only run-owned services, containers, definitions, image tags, and
 failed-unit state; never prune unrelated resources or reset all user-systemd failures.
 The final D039 attempt passed 47 cases per native/WASIp2/Podman variant (141 total),
-with exact response parity and interruption recovery. VM parity and benchmark
-campaigns remain unimplemented.
+with exact response parity and interruption recovery. D040 adds validated functional VM parity (188 wire cases across four variants).
+The D052 synthetic backend has local development evidence. Benchmark campaigns
+and the Phase 3.5 control plane implementation remain future work.
 
 The user requests avoiding custom Python. Use Clojure/Babashka for controller,
 bootstrap, and functional fixtures; Rust remains the VNF/probe language (D037).

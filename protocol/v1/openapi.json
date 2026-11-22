@@ -1,0 +1,255 @@
+{
+  "openapi": "3.1.0",
+  "info": {
+    "title": "mt Agent API",
+    "version": "1.0.0",
+    "description": "Phase 3.5 design contract. Listener address is deployment configuration."
+  },
+  "security": [{"agentCertificate": []}],
+  "components": {
+    "securitySchemes": {"agentCertificate": {"type": "mutualTLS"}},
+    "responses": {
+      "Error400": {
+        "description": "Invalid payload or header",
+        "content": {"application/json": {"schema": {"$ref": "./schemas.json#/$defs/Error"}}}
+      },
+      "Error403": {
+        "description": "Forbidden",
+        "content": {"application/json": {"schema": {"$ref": "./schemas.json#/$defs/Error"}}}
+      },
+      "Error404": {
+        "description": "Unknown owned object",
+        "content": {"application/json": {"schema": {"$ref": "./schemas.json#/$defs/Error"}}}
+      },
+      "Error409": {
+        "description": "Stale authority or conflicting request",
+        "content": {"application/json": {"schema": {"$ref": "./schemas.json#/$defs/Error"}}}
+      },
+      "Error413": {
+        "description": "Payload too large",
+        "content": {"application/json": {"schema": {"$ref": "./schemas.json#/$defs/Error"}}}
+      },
+      "Error415": {
+        "description": "Unsupported media type",
+        "content": {"application/json": {"schema": {"$ref": "./schemas.json#/$defs/Error"}}}
+      },
+      "Error422": {
+        "description": "Unsupported protocol version",
+        "content": {"application/json": {"schema": {"$ref": "./schemas.json#/$defs/Error"}}}
+      },
+      "Error429": {
+        "description": "Admission limit reached",
+        "content": {"application/json": {"schema": {"$ref": "./schemas.json#/$defs/Error"}}}
+      },
+      "Error503": {
+        "description": "Temporarily unavailable",
+        "content": {"application/json": {"schema": {"$ref": "./schemas.json#/$defs/Error"}}}
+      }
+    }
+  },
+  "paths": {
+    "/api/v1/agents/register": {
+      "post": {
+        "operationId": "registerAgent",
+        "description": "Negotiate v1 minor and authorized capabilities.",
+        "requestBody": {"required": true,"content": {"application/json": {"schema": {"$ref": "./schemas.json#/$defs/Register"}}}},
+        "responses": {
+          "200": {
+            "description": "Committed reply",
+            "content": {"application/json": {"schema": {"$ref": "./schemas.json#/$defs/Registration"}}}
+          },
+          "400": {"$ref": "#/components/responses/Error400"},
+          "403": {"$ref": "#/components/responses/Error403"},
+          "404": {"$ref": "#/components/responses/Error404"},
+          "409": {"$ref": "#/components/responses/Error409"},
+          "413": {"$ref": "#/components/responses/Error413"},
+          "415": {"$ref": "#/components/responses/Error415"},
+          "422": {"$ref": "#/components/responses/Error422"},
+          "429": {"$ref": "#/components/responses/Error429"},
+          "503": {"$ref": "#/components/responses/Error503"}
+        }
+      }
+    },
+    "/api/v1/agents/heartbeat": {
+      "post": {
+        "operationId": "heartbeat",
+        "description": "Renew or cancel current authority independently of polling and uploads.",
+        "requestBody": {
+          "required": true,
+          "content": {"application/json": {"schema": {"$ref": "./schemas.json#/$defs/Heartbeat"}}}
+        },
+        "responses": {
+          "200": {
+            "description": "Committed reply",
+            "content": {"application/json": {"schema": {"$ref": "./schemas.json#/$defs/HeartbeatReply"}}}
+          },
+          "400": {"$ref": "#/components/responses/Error400"},
+          "403": {"$ref": "#/components/responses/Error403"},
+          "404": {"$ref": "#/components/responses/Error404"},
+          "409": {"$ref": "#/components/responses/Error409"},
+          "413": {"$ref": "#/components/responses/Error413"},
+          "415": {"$ref": "#/components/responses/Error415"},
+          "422": {"$ref": "#/components/responses/Error422"},
+          "429": {"$ref": "#/components/responses/Error429"},
+          "503": {"$ref": "#/components/responses/Error503"}
+        }
+      }
+    },
+    "/api/v1/jobs/claim": {
+      "post": {
+        "operationId": "claimJob",
+        "description": "Long poll for an assignment. Start still requires authorization.",
+        "requestBody": {"required": true,"content": {"application/json": {"schema": {"$ref": "./schemas.json#/$defs/Claim"}}}},
+        "responses": {
+          "200": {
+            "description": "Committed reply",
+            "content": {"application/json": {"schema": {"$ref": "./schemas.json#/$defs/Assignment"}}}
+          },
+          "204": {"description": "Poll ended without assignment"},
+          "400": {"$ref": "#/components/responses/Error400"},
+          "403": {"$ref": "#/components/responses/Error403"},
+          "404": {"$ref": "#/components/responses/Error404"},
+          "409": {"$ref": "#/components/responses/Error409"},
+          "413": {"$ref": "#/components/responses/Error413"},
+          "415": {"$ref": "#/components/responses/Error415"},
+          "422": {"$ref": "#/components/responses/Error422"},
+          "429": {"$ref": "#/components/responses/Error429"},
+          "503": {"$ref": "#/components/responses/Error503"}
+        }
+      }
+    },
+    "/api/v1/jobs/{id}/started": {
+      "post": {
+        "operationId": "authorizeStart",
+        "description": "Record intent and grant authority before process spawn.",
+        "parameters": [{"name": "id","in": "path","required": true,"schema": {"$ref": "./schemas.json#/$defs/Id"}}],
+        "requestBody": {"required": true,"content": {"application/json": {"schema": {"$ref": "./schemas.json#/$defs/Started"}}}},
+        "responses": {
+          "200": {
+            "description": "Committed reply",
+            "content": {"application/json": {"schema": {"$ref": "./schemas.json#/$defs/StartAuthority"}}}
+          },
+          "400": {"$ref": "#/components/responses/Error400"},
+          "403": {"$ref": "#/components/responses/Error403"},
+          "404": {"$ref": "#/components/responses/Error404"},
+          "409": {"$ref": "#/components/responses/Error409"},
+          "413": {"$ref": "#/components/responses/Error413"},
+          "415": {"$ref": "#/components/responses/Error415"},
+          "422": {"$ref": "#/components/responses/Error422"},
+          "429": {"$ref": "#/components/responses/Error429"},
+          "503": {"$ref": "#/components/responses/Error503"}
+        }
+      }
+    },
+    "/api/v1/jobs/{id}/complete": {
+      "post": {
+        "operationId": "completeJob",
+        "description": "Record successful execution and already acknowledged artifacts.",
+        "parameters": [{"name": "id","in": "path","required": true,"schema": {"$ref": "./schemas.json#/$defs/Id"}}],
+        "requestBody": {"required": true,"content": {"application/json": {"schema": {"$ref": "./schemas.json#/$defs/Complete"}}}},
+        "responses": {
+          "204": {"description": "Recorded"},
+          "400": {"$ref": "#/components/responses/Error400"},
+          "403": {"$ref": "#/components/responses/Error403"},
+          "404": {"$ref": "#/components/responses/Error404"},
+          "409": {"$ref": "#/components/responses/Error409"},
+          "413": {"$ref": "#/components/responses/Error413"},
+          "415": {"$ref": "#/components/responses/Error415"},
+          "422": {"$ref": "#/components/responses/Error422"},
+          "429": {"$ref": "#/components/responses/Error429"},
+          "503": {"$ref": "#/components/responses/Error503"}
+        }
+      }
+    },
+    "/api/v1/jobs/{id}/fail": {
+      "post": {
+        "operationId": "failJob",
+        "description": "Record failure, termination evidence or uncertainty, and artifact gaps.",
+        "parameters": [{"name": "id","in": "path","required": true,"schema": {"$ref": "./schemas.json#/$defs/Id"}}],
+        "requestBody": {"required": true,"content": {"application/json": {"schema": {"$ref": "./schemas.json#/$defs/Fail"}}}},
+        "responses": {
+          "204": {"description": "Recorded"},
+          "400": {"$ref": "#/components/responses/Error400"},
+          "403": {"$ref": "#/components/responses/Error403"},
+          "404": {"$ref": "#/components/responses/Error404"},
+          "409": {"$ref": "#/components/responses/Error409"},
+          "413": {"$ref": "#/components/responses/Error413"},
+          "415": {"$ref": "#/components/responses/Error415"},
+          "422": {"$ref": "#/components/responses/Error422"},
+          "429": {"$ref": "#/components/responses/Error429"},
+          "503": {"$ref": "#/components/responses/Error503"}
+        }
+      }
+    },
+    "/api/v1/jobs/{id}/reconcile": {
+      "post": {
+        "operationId": "reconcileJob",
+        "description": "Reconcile historical attempt evidence without granting execution authority.",
+        "parameters": [{"name": "id","in": "path","required": true,"schema": {"$ref": "./schemas.json#/$defs/Id"}}],
+        "requestBody": {
+          "required": true,
+          "content": {"application/json": {"schema": {"$ref": "./schemas.json#/$defs/Reconcile"}}}
+        },
+        "responses": {
+          "200": {
+            "description": "Committed reply",
+            "content": {"application/json": {"schema": {"$ref": "./schemas.json#/$defs/Reconciled"}}}
+          },
+          "400": {"$ref": "#/components/responses/Error400"},
+          "403": {"$ref": "#/components/responses/Error403"},
+          "404": {"$ref": "#/components/responses/Error404"},
+          "409": {"$ref": "#/components/responses/Error409"},
+          "413": {"$ref": "#/components/responses/Error413"},
+          "415": {"$ref": "#/components/responses/Error415"},
+          "422": {"$ref": "#/components/responses/Error422"},
+          "429": {"$ref": "#/components/responses/Error429"},
+          "503": {"$ref": "#/components/responses/Error503"}
+        }
+      }
+    },
+    "/api/v1/jobs/{id}/artifacts/{name}": {
+      "put": {
+        "operationId": "uploadArtifact",
+        "description": "Upload immutable bytes or replay an identical durable receipt.",
+        "parameters": [
+          {"name": "id","in": "path","required": true,"schema": {"$ref": "./schemas.json#/$defs/Id"}},
+          {"name": "name","in": "path","required": true,"schema": {"$ref": "./schemas.json#/$defs/Name"}},
+          {"name": "Mt-Session-Id","in": "header","required": true,"schema": {"$ref": "./schemas.json#/$defs/Id"}},
+          {"name": "Mt-Attempt-Id","in": "header","required": true,"schema": {"$ref": "./schemas.json#/$defs/Id"}},
+          {"name": "Mt-Lease-Id","in": "header","required": true,"schema": {"$ref": "./schemas.json#/$defs/Id"}},
+          {
+            "name": "Mt-Content-Sha256",
+            "in": "header",
+            "required": true,
+            "schema": {"$ref": "./schemas.json#/$defs/Sha256"}
+          },
+          {
+            "name": "Content-Length",
+            "in": "header",
+            "required": true,
+            "schema": {"type": "integer","minimum": 0,"maximum": 9007199254740991}
+          }
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {"application/octet-stream": {"schema": {"type": "string","format": "binary"}}}
+        },
+        "responses": {
+          "200": {
+            "description": "Durable artifact receipt",
+            "content": {"application/json": {"schema": {"$ref": "./schemas.json#/$defs/ArtifactReceipt"}}}
+          },
+          "400": {"$ref": "#/components/responses/Error400"},
+          "403": {"$ref": "#/components/responses/Error403"},
+          "404": {"$ref": "#/components/responses/Error404"},
+          "409": {"$ref": "#/components/responses/Error409"},
+          "413": {"$ref": "#/components/responses/Error413"},
+          "415": {"$ref": "#/components/responses/Error415"},
+          "422": {"$ref": "#/components/responses/Error422"},
+          "429": {"$ref": "#/components/responses/Error429"},
+          "503": {"$ref": "#/components/responses/Error503"}
+        }
+      }
+    }
+  }
+}

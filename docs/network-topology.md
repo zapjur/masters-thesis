@@ -25,7 +25,7 @@ M4 Ethernet ── ingress segment ── enp3s0   DUT   enp4s0 ── egress se
                               client TCP → VNF → backend TCP
 
 M1 controller ── management LAN ── DUT eno1 / SSH
-             └── management path to M4 / SSH (verify)
+             └── Agent API ← outbound M4 HTTPS/mTLS (verify)
 Planned Pi ───── management LAN ── DUT exporters (verify when available)
 ```
 
@@ -135,3 +135,8 @@ network headroom before attributing saturation to a VNF.
 - Confirm monitoring hardware and management reachability when the Pi is
   available. Phase 2 acceptance still requires approved NIC roles and
   topology, verified link capacity, and positive and negative path evidence.
+
+The [control plane design](control-plane.md) separates agent and monitoring
+management traffic from the benchmark path. Phases 4A–4D use local fixtures.
+Development pilots may use the existing LAN; final conclusions require the
+validated data-network path and capacity.
